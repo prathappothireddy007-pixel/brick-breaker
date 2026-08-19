@@ -413,7 +413,8 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 16px;
+  padding: 12px;
+  width: 100%;
 }
 
 /* ARENA FRAME (the glowing neon border around gameCanvas) */
