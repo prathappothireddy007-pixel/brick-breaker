@@ -1,0 +1,16 @@
+NAME:Iron Fortress
+THEME:EMERALD
+MUSIC:HEAVY
+ROWS:10
+COLS:15
+GRID:
+I I I I I I I I I I I I I I I
+I S S S S S S S S S S S S S I
+I S I I S S S S S S I I S S I
+I S I S S T T T T S S I S S I
+I S I S T T T T T T S I S S I
+I S I S T T T T T T S I S S I
+I S I S S T T T T S S I S S I
+I S I I S S S S S S I I S S I
+I S S S S S S S S S S S S S I
+I I I I I I I I I I I I I I I

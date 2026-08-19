@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#030008">
+    <title>Brick Breaker - Break The Limit</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Styles & Scripts -->
+    <link rel="stylesheet" href="style.css">
+    <script src="game.js" defer></script>
+</head>
+<body>
+    <!-- Fixed Background & Cursor -->
+    <canvas id="bgCanvas" aria-hidden="true"></canvas>
+    <div id="cursor-glow" aria-hidden="true"></div>
+    
+    <div id="app">
+        <!-- Start Screen -->
+        <section id="screen-start" class="screen active">
+            <canvas id="previewCanvas" aria-hidden="true"></canvas>
+            <div class="start-content">
+                <div class="logo-container">
+                    <h1 class="game-logo">
+                        <span class="logo-line">BRICK</span>
+                        <span class="logo-line accent">BREAKER</span>
+                    </h1>
+                    <p class="tagline">BREAK THE LIMIT</p>
+                </div>
+                <button id="btn-start" class="btn-start">
+                    <span class="btn-label">START GAME</span>
+                </button>
+                <div class="controls-hint">
+                    <span>&larr; MOUSE / TOUCH &rarr; TO MOVE &bull; SPACE TO LAUNCH</span>
+                </div>
+                <div class="start-footer">
+                    <span>BEST: </span>
+                    <span id="start-best">0</span>
+                </div>
+            </div>
+            
+            <!-- Corner Accents -->
+            <div class="corner tl" aria-hidden="true"></div>
+            <div class="corner tr" aria-hidden="true"></div>
+            <div class="corner bl" aria-hidden="true"></div>
+            <div class="corner br" aria-hidden="true"></div>
+        </section>
+        
+        <!-- Game Screen -->
+        <section id="screen-game" class="screen">
+            <!-- HUD -->
+            <header id="hud">
+                <div class="hud-panel hud-left">
+                    <div class="hud-item">
+                        <div class="hud-label">SCORE</div>
+                        <div class="hud-val" id="hud-score">0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">COMBO</div>
+                        <div class="hud-val" id="hud-combo">&times;1</div>
+                    </div>
+                </div>
+                <div class="hud-center">
+                    <div class="hud-level">
+                        <span class="hud-label">LVL</span>
+                        <span id="hud-level">01</span>
+                    </div>
+                    <div class="lives-row" id="hud-lives">
+                        <div class="life-dot active"></div>
+                        <div class="life-dot active"></div>
+                        <div class="life-dot active"></div>
+                    </div>
+                </div>
+                <div class="hud-panel hud-right">
+                    <div class="hud-item">
+                        <div class="hud-label">BEST</div>
+                        <div class="hud-val" id="hud-best">0</div>
+                    </div>
+                    <button id="btn-pause" class="btn-icon" aria-label="Pause">&#9208;</button>
+                </div>
+            </header>
+            
+            <!-- Game Arena -->
+            <main id="arena-wrapper">
+                <div id="arena-frame" aria-hidden="true">
+                    <div class="frame-edge fe-top"></div>
+                    <div class="frame-edge fe-right"></div>
+                    <div class="frame-edge fe-bottom"></div>
+                    <div class="frame-edge fe-left"></div>
+                    <div class="frame-corner fc-tl"></div>
+                    <div class="frame-corner fc-tr"></div>
+                    <div class="frame-corner fc-bl"></div>
+                    <div class="frame-corner fc-br"></div>
+                    <div class="scanline" aria-hidden="true"></div>
+                </div>
+                <canvas id="gameCanvas"></canvas>
+                <div id="powerups-hud"></div>
+            </main>
+        </section>
+        
+        <!-- Pause Overlay -->
+        <section id="screen-pause" class="screen overlay-screen" role="dialog">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <h2 class="modal-title">PAUSED</h2>
+                <div class="modal-sep"></div>
+                <button id="btn-resume" class="btn-primary">RESUME</button>
+                <button id="btn-menu" class="btn-ghost">MAIN MENU</button>
+            </div>
+        </section>
+        
+        <!-- Game Over Overlay -->
+        <section id="screen-gameover" class="screen overlay-screen" role="dialog">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel panel-failure">
+                <div class="glitch-title">
+                    <h2 class="modal-title">SYSTEM</h2>
+                    <h2 class="modal-title title-sub">FAILURE</h2>
+                </div>
+                <div class="modal-sep"></div>
+                <div class="stats-grid">
+                    <div class="stat-block">
+                        <div class="stat-lbl">FINAL SCORE</div>
+                        <div class="stat-num" id="go-score">0</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-lbl">BEST COMBO</div>
+                        <div class="stat-num" id="go-combo">&times;0</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-lbl">HIGH SCORE</div>
+                        <div class="stat-num" id="go-best">0</div>
+                    </div>
+                </div>
+                <button id="btn-restart" class="btn-primary">[ PLAY AGAIN ]</button>
+                <button id="btn-menu2" class="btn-ghost">MAIN MENU</button>
+            </div>
+        </section>
+        
+        <!-- Victory Overlay -->
+        <section id="screen-victory" class="screen overlay-screen" role="dialog">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel panel-victory">
+                <h2 class="modal-title title-victory">LEVEL</h2>
+                <h2 class="modal-title title-victory title-sub">CLEARED</h2>
+                <div class="modal-sep"></div>
+                <div class="stats-grid">
+                    <div class="stat-block">
+                        <div class="stat-lbl">SCORE</div>
+                        <div class="stat-num" id="vic-score">0</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-lbl">BEST COMBO</div>
+                        <div class="stat-num" id="vic-combo">&times;0</div>
+                    </div>
+                </div>
+                <button id="btn-next" class="btn-primary">NEXT LEVEL &rarr;</button>
+                <button id="btn-menu3" class="btn-ghost">MAIN MENU</button>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Floating UI -->
+    <div id="floating-ui" aria-hidden="true">
+        <div id="combo-popup"></div>
+    </div>
+</body>
+</html>

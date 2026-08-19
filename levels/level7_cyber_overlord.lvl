@@ -1,0 +1,17 @@
+NAME:Cyber Overlord
+THEME:CYBERPUNK
+MUSIC:CYBER
+ROWS:11
+COLS:15
+GRID:
+M T M T M T M T M T M T M T M
+T I T I T I T I T I T I T I T
+M T S S S S S S S S S S T M T
+T I S T T M T M T T S I T I T
+M T S T E E E E E T S T M T M
+T I S M E I I I E M S I T I T
+M T S T E E E E E T S T M T M
+T I S T T M T M T T S I T I T
+M T S S S S S S S S S S T M T
+T I T I T I T I T I T I T I T
+M T M T M T M T M T M T M T M

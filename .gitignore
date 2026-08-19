@@ -1,0 +1,4 @@
+node_modules/
+bin/
+*.class
+.DS_Store

@@ -1,0 +1,17 @@
+NAME:Vortex Maze
+THEME:DEEP_SPACE
+MUSIC:AMBIENT
+ROWS:11
+COLS:15
+GRID:
+I I I I I I I I I I I I I I I
+I . V V V V . . . V V V V . I
+I . V . . . . . . . . . V . I
+I . V . I I I I I I I . V . I
+I . V . I . . . . . I . V . I
+I . V . I . V V V . I . V . I
+I . V . I . . . . . I . V . I
+I . V . I I I I I I I . V . I
+I . V . . . . . . . . . V . I
+I . V V V V V V V V V V V . I
+I I I I I I I I I I I I I I I

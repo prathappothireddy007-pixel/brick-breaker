@@ -1,0 +1,14 @@
+NAME:Awakening
+THEME:CYBER_GRID
+MUSIC:SYNTHWAVE
+ROWS:8
+COLS:15
+GRID:
+. S S S S S S S S S S S S S .
+S S S S S S S S S S S S S S S
+S S S S S S S S S S S S S S S
+. S S S S S S S S S S S S S .
+. . S S S S S S S S S S S . .
+. . . S S S S S S S S S . . .
+. . . . S S S S S S S . . . .
+. . . . . S S S S S . . . . .
