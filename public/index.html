@@ -20,8 +20,22 @@
     <canvas id="bgCanvas" aria-hidden="true"></canvas>
     <div id="cursor-glow" aria-hidden="true"></div>
     
+    <!-- Level Transition Overlay -->
+    <div id="screen-transition" aria-hidden="true">
+        <div id="transition-text"></div>
+    </div>
+
+    <!-- Achievement Toast -->
+    <div id="achievement-toast" aria-live="polite">
+        <div class="ach-icon">🏆</div>
+        <div class="ach-body">
+            <div class="ach-title">ACHIEVEMENT UNLOCKED</div>
+            <div class="ach-name" id="ach-name-text"></div>
+        </div>
+    </div>
+
     <div id="app">
-        <!-- Start Screen -->
+        <!-- ══════════════════ START SCREEN ══════════════════ -->
         <section id="screen-start" class="screen active">
             <canvas id="previewCanvas" aria-hidden="true"></canvas>
             <div class="start-content">
@@ -32,11 +46,18 @@
                     </h1>
                     <p class="tagline">BREAK THE LIMIT</p>
                 </div>
-                <button id="btn-start" class="btn-start">
-                    <span class="btn-label">START GAME</span>
-                </button>
+
+                <div class="start-buttons">
+                    <button id="btn-start" class="btn-start">
+                        <span class="btn-label">▶ START GAME</span>
+                    </button>
+                    <button id="btn-level-select" class="btn-secondary">
+                        <span class="btn-label">☰ SELECT LEVEL</span>
+                    </button>
+                </div>
+
                 <div class="controls-hint">
-                    <span>&larr; MOUSE / TOUCH &rarr; TO MOVE &bull; SPACE TO LAUNCH</span>
+                    <span>← MOUSE / TOUCH → TO MOVE &bull; SPACE TO LAUNCH &bull; P TO PAUSE</span>
                 </div>
                 <div class="start-footer">
                     <span>BEST: </span>
@@ -50,8 +71,20 @@
             <div class="corner bl" aria-hidden="true"></div>
             <div class="corner br" aria-hidden="true"></div>
         </section>
+
+        <!-- ══════════════════ LEVEL SELECT SCREEN ══════════════════ -->
+        <section id="screen-level-select" class="screen">
+            <div class="ls-header">
+                <button id="btn-ls-back" class="btn-icon-lg" aria-label="Back">←</button>
+                <h2 class="ls-title">SELECT LEVEL</h2>
+                <div></div>
+            </div>
+            <div class="worlds-container" id="worlds-container">
+                <!-- Dynamically generated world cards & level grids -->
+            </div>
+        </section>
         
-        <!-- Game Screen -->
+        <!-- ══════════════════ GAME SCREEN ══════════════════ -->
         <section id="screen-game" class="screen">
             <!-- HUD -->
             <header id="hud">
@@ -67,7 +100,7 @@
                 </div>
                 <div class="hud-center">
                     <div class="hud-level">
-                        <span class="hud-label">LVL</span>
+                        <span class="hud-label" id="hud-world-name">NEON CITY</span>
                         <span id="hud-level">01</span>
                     </div>
                     <div class="lives-row" id="hud-lives">
@@ -84,6 +117,15 @@
                     <button id="btn-pause" class="btn-icon" aria-label="Pause">&#9208;</button>
                 </div>
             </header>
+
+            <!-- Boss HP Bar (hidden when no boss) -->
+            <div id="boss-hp-container" class="hidden">
+                <div class="boss-hp-label">⚠ BOSS <span id="boss-name-text">CYBER OVERLORD</span></div>
+                <div class="boss-hp-track">
+                    <div class="boss-hp-fill" id="boss-hp-fill"></div>
+                    <div class="boss-hp-fill-glow" id="boss-hp-fill-glow"></div>
+                </div>
+            </div>
             
             <!-- Game Arena -->
             <main id="arena-wrapper">
@@ -103,8 +145,8 @@
             </main>
         </section>
         
-        <!-- Pause Overlay -->
-        <section id="screen-pause" class="screen overlay-screen" role="dialog">
+        <!-- ══════════════════ PAUSE OVERLAY ══════════════════ -->
+        <section id="screen-pause" class="screen overlay-screen" role="dialog" aria-label="Game Paused">
             <div class="modal-backdrop"></div>
             <div class="modal-panel">
                 <h2 class="modal-title">PAUSED</h2>
@@ -114,8 +156,8 @@
             </div>
         </section>
         
-        <!-- Game Over Overlay -->
-        <section id="screen-gameover" class="screen overlay-screen" role="dialog">
+        <!-- ══════════════════ GAME OVER OVERLAY ══════════════════ -->
+        <section id="screen-gameover" class="screen overlay-screen" role="dialog" aria-label="Game Over">
             <div class="modal-backdrop"></div>
             <div class="modal-panel panel-failure">
                 <div class="glitch-title">
@@ -137,18 +179,20 @@
                         <div class="stat-num" id="go-best">0</div>
                     </div>
                 </div>
+                <div class="star-row" id="go-stars"></div>
                 <button id="btn-restart" class="btn-primary">[ PLAY AGAIN ]</button>
                 <button id="btn-menu2" class="btn-ghost">MAIN MENU</button>
             </div>
         </section>
         
-        <!-- Victory Overlay -->
-        <section id="screen-victory" class="screen overlay-screen" role="dialog">
+        <!-- ══════════════════ VICTORY OVERLAY ══════════════════ -->
+        <section id="screen-victory" class="screen overlay-screen" role="dialog" aria-label="Level Cleared">
             <div class="modal-backdrop"></div>
             <div class="modal-panel panel-victory">
                 <h2 class="modal-title title-victory">LEVEL</h2>
                 <h2 class="modal-title title-victory title-sub">CLEARED</h2>
                 <div class="modal-sep"></div>
+                <div class="star-row" id="vic-stars"></div>
                 <div class="stats-grid">
                     <div class="stat-block">
                         <div class="stat-lbl">SCORE</div>
@@ -158,16 +202,21 @@
                         <div class="stat-lbl">BEST COMBO</div>
                         <div class="stat-num" id="vic-combo">&times;0</div>
                     </div>
+                    <div class="stat-block">
+                        <div class="stat-lbl">TIME</div>
+                        <div class="stat-num" id="vic-time">0s</div>
+                    </div>
                 </div>
                 <button id="btn-next" class="btn-primary">NEXT LEVEL &rarr;</button>
                 <button id="btn-menu3" class="btn-ghost">MAIN MENU</button>
             </div>
         </section>
     </div>
-    
+
     <!-- Floating UI -->
     <div id="floating-ui" aria-hidden="true">
         <div id="combo-popup"></div>
+        <div id="milestone-popup"></div>
     </div>
 </body>
 </html>
