@@ -1,10 +1,11 @@
 'use strict';
 
 /* ============================================================
-   BRICK BREAKER: ROGUELIKE BULLET-TIME OVERHAUL (v3.1)
-   - Dynamic Hero Morphs & Bullet-Time as In-Game Power-Ups
-   - Reliable Starter Hero Selection & HUD Badges
-   - Roguelike Relic Draft & Synergies (12+ Stackable Relics)
+   BRICK BREAKER: ROGUELIKE ARCADE OVERHAUL (v3.2)
+   - Fixed Arena Sizing & Viewport Dimensions on Initial Start
+   - Pure 60 FPS Constant Speed (Time-Stop as Power-Up Drop)
+   - Dynamic Hero Morphs: Samurai, Mech, Chrono Drops
+   - 12 Stackable Roguelike Relics & Post-Wave Draft
    - Dynamic Anomalies: Gravity Wells, Portals & Physics Debris
    - 5 Themed Worlds · Multi-Phase Boss Encounters
    ============================================================ */
@@ -25,9 +26,9 @@ const HEROES = {
     name: 'CHRONO MAGE',
     icon: '⏳',
     color: '#00f5ff',
-    passiveText: 'Starts with Time-Stop & Rewind',
-    ultName: 'CHRONO TIME-STOP',
-    ultDesc: 'Freezes / slows time when you pause moving & grants emergency ball rewinds.',
+    passiveText: 'Safe Ball Rewind on Ultimate',
+    ultName: 'CHRONO REWIND',
+    ultDesc: 'Teleports ball back safely to your paddle with emergency safety shield.',
   },
   SIEGE_MECH: {
     id: 'SIEGE_MECH',
@@ -161,7 +162,7 @@ function isBossLevel(level) { return level % 3 === 0; }
 // ─── CONFIGURATION CONSTANTS ─────────────────────────────────
 const CFG = {
   BALL_R: 8,
-  BALL_BASE_SPEED: 420,
+  BALL_BASE_SPEED: 430,
   BALL_MAX_SPEED: 680,
   BALL_MIN_SPEED: 220,
   PADDLE_W: 120,
@@ -189,22 +190,22 @@ const BTYPE = {
   ARMORED:   { hp: 5,        score: 500, color: '#cc8800' },
 };
 
-// Expanded In-Game Power-Ups list including Hero Morphs & Bullet-Time!
+// Power-Ups List
 const PU = {
-  MULTIBALL:    { label: 'MULTI',       color: '#00f5ff', dur: 0 },
-  BIGPADDLE:    { label: 'BIG',         color: '#00ff88', dur: 12 },
-  LASER:        { label: 'LASER',       color: '#ff3366', dur: 10 },
-  SLOWMO:       { label: 'SLOW',        color: '#aa44ff', dur: 8  },
-  SHIELD:       { label: 'SHIELD',      color: '#ffd700', dur: 15 },
-  FIREBALL:     { label: 'FIRE',        color: '#ff6a00', dur: 8  },
-  GEMSTONE:     { label: 'GEM ×10',    color: '#ff44cc', dur: 0, hits: 5 },
-  STORM:        { label: 'STORM',       color: '#ffe600', dur: 6  },
-  GRAVITY:      { label: 'GRAV',        color: '#cc44ff', dur: 8  },
-  MIRROR:       { label: 'MIRROR',      color: '#88ffdd', dur: 10 },
-  BULLET_TIME:  { label: '⏳ TIME-STOP', color: '#00f5ff', dur: 12 },
-  HERO_SAMURAI: { label: '⚔️ SAMURAI',  color: '#ff00ff', dur: 14 },
-  HERO_MECH:    { label: '🤖 MECH BEAM', color: '#ffd700', dur: 10 },
-  HERO_CHRONO:  { label: '⏳ REWIND',    color: '#00d4ff', dur: 12 },
+  MULTIBALL:    { label: 'MULTI',        color: '#00f5ff', dur: 0 },
+  BIGPADDLE:    { label: 'BIG',          color: '#00ff88', dur: 12 },
+  LASER:        { label: 'LASER',        color: '#ff3366', dur: 10 },
+  SLOWMO:       { label: 'SLOW-MO',      color: '#aa44ff', dur: 8  },
+  SHIELD:       { label: 'SHIELD',       color: '#ffd700', dur: 15 },
+  FIREBALL:     { label: 'FIRE',         color: '#ff6a00', dur: 8  },
+  GEMSTONE:     { label: 'GEM ×10',     color: '#ff44cc', dur: 0, hits: 5 },
+  STORM:        { label: 'STORM',        color: '#ffe600', dur: 6  },
+  GRAVITY:      { label: 'GRAV',         color: '#cc44ff', dur: 8  },
+  MIRROR:       { label: 'MIRROR',       color: '#88ffdd', dur: 10 },
+  BULLET_TIME:  { label: '⏳ TIME-STOP',  color: '#00f5ff', dur: 10 },
+  HERO_SAMURAI: { label: '⚔️ SAMURAI',   color: '#ff00ff', dur: 14 },
+  HERO_MECH:    { label: '🤖 MECH BEAM',  color: '#ffd700', dur: 10 },
+  HERO_CHRONO:  { label: '⏳ REWIND',     color: '#00d4ff', dur: 12 },
 };
 
 // ─── AUDIO ENGINE ─────────────────────────────────────────────
@@ -316,8 +317,7 @@ class DebrisChunk {
     this.vx = (Math.random() - 0.5) * 180;
     this.vy = -(60 + Math.random() * 100);
     this.rot = 0; this.rotV = (Math.random() - 0.5) * 8;
-    this.alive = true;
-    this.life = 4.0;
+    this.alive = true; this.life = 4.0;
   }
   update(dt, AW, AH) {
     this.vy += 650 * dt;
@@ -864,7 +864,7 @@ class PowerUp {
     this.x = x; this.y = y; this.type = type;
     this.info = PU[type] || { label: type, color: '#00f5ff', dur: 10 };
     this.vy = 120; this.bt = Math.random() * Math.PI * 2;
-    this.w = 78; this.h = 24; this.alive = true;
+    this.w = 82; this.h = 24; this.alive = true;
   }
   update(dt) { this.y += this.vy * dt; this.bt += dt * 4; }
   render(ctx) {
@@ -924,15 +924,11 @@ class BrickBreaker {
 
     // Hero Avatar State
     this.hero = HEROES['CYBER_SAMURAI'];
-    this.activeHeroMorph = null; // Mid-game hero morph
+    this.activeHeroMorph = null;
     this.relics = [];
     this.ultCharge = 0;
     this.isUltActive = false;
     this.ultTimer = 0;
-
-    // Bullet Time
-    this.paddleLastX = 0;
-    this.timeScale = 1.0;
 
     // Anomalies
     this.wells = [];
@@ -976,20 +972,29 @@ class BrickBreaker {
     requestAnimationFrame(t => this._loop(t));
   }
 
+  // Robust sizing based purely on window dimensions
   _resize() {
     const W = window.innerWidth, H = window.innerHeight;
     this.bg.resize(W, H);
-    const wrapper = document.getElementById('arena-wrapper');
-    const wrapW = wrapper ? Math.max(300, wrapper.clientWidth - 28) : W - 32;
-    const wrapH = wrapper ? Math.max(300, wrapper.clientHeight - 28) : H - 90;
-    this.AW = Math.min(wrapW, 760);
-    this.AH = Math.min(wrapH, Math.floor(this.AW * 1.12));
-    if (this.AH > wrapH) {
-      this.AH = wrapH;
-      this.AW = Math.min(wrapW, Math.floor(this.AH / 1.12));
+
+    const availW = Math.max(320, W - 32);
+    const availH = Math.max(400, H - 110);
+
+    let w = Math.min(availW, 760);
+    let h = Math.min(availH, Math.floor(w * 1.12));
+    if (h > availH) {
+      h = availH;
+      w = Math.min(availW, Math.floor(h / 1.12));
     }
-    this.gC.width  = this.AW; this.gC.height = this.AH;
-    this.gC.style.width = this.AW + 'px'; this.gC.style.height = this.AH + 'px';
+
+    this.AW = Math.floor(w);
+    this.AH = Math.floor(h);
+
+    this.gC.width  = this.AW;
+    this.gC.height = this.AH;
+    this.gC.style.width = this.AW + 'px';
+    this.gC.style.height = this.AH + 'px';
+
     const frame = document.getElementById('arena-frame');
     if (frame) {
       frame.style.width  = (this.AW + 6) + 'px';
@@ -1001,6 +1006,10 @@ class BrickBreaker {
     if (this.paddle) {
       this.paddle.y = this.AH - 38;
       this.paddle.x = Math.max(0, Math.min(this.AW - this.paddle.w, this.paddle.x));
+    }
+    if (this.ball && this.ball.stuck) {
+      this.ball.x = this.paddle ? this.paddle.x + this.paddle.w/2 : this.AW/2;
+      this.ball.y = this.paddle ? this.paddle.y - CFG.BALL_R - 3 : this.AH - 60;
     }
   }
 
@@ -1077,7 +1086,6 @@ class BrickBreaker {
     on('btn-draft-relic',  () => this._showRelicDraft());
     on('btn-ult',          () => this._activateHeroUlt());
 
-    // Explicit reliable Hero Selection click handler
     const heroKeys = ['CYBER_SAMURAI', 'CHRONO_MAGE', 'SIEGE_MECH'];
     heroKeys.forEach(hKey => {
       const card = document.getElementById(`card-${hKey}`);
@@ -1100,7 +1108,6 @@ class BrickBreaker {
     this.hero = HEROES[hKey];
     this.audio.play('morph');
 
-    // Update Card UI
     document.querySelectorAll('.hero-card').forEach(c => {
       const isCurrent = c.getAttribute('data-hero') === hKey;
       c.classList.toggle('selected', isCurrent);
@@ -1164,7 +1171,7 @@ class BrickBreaker {
       }
       this.aPU['BULLET_TIME'] = true;
       this.puT['BULLET_TIME'] = 8;
-      this.ps.addText(this.AW/2, this.AH/2, 'CHRONO TIME-STOP!', '#00f5ff', 30);
+      this.ps.addText(this.AW/2, this.AH/2, 'CHRONO REWIND!', '#00f5ff', 30);
       this.isUltActive = false;
     } else if (currentHero.id === 'CYBER_SAMURAI') {
       const xs = [this.paddle.x, this.paddle.x + this.paddle.w/2, this.paddle.x + this.paddle.w];
@@ -1244,7 +1251,10 @@ class BrickBreaker {
 
   // ── GAME FLOW ────────────────────────────────────────────────
   _startGame() {
+    // Set screen to playing FIRST so layout is active before building bricks
+    this._setState('playing');
     this._resize();
+
     this.score = 0; this.combo = 0; this.bestCombo = 0;
     this.lives = 3; this.startLives = 3;
     this.aPU = {}; this.puT = {};
@@ -1265,7 +1275,6 @@ class BrickBreaker {
     this._initBall();
     this._buildBricks();
     this._buildAnomalies();
-    this._setState('playing');
     this._updateHUD();
     this._updatePUDisplay();
     this._updateBossBar();
@@ -1524,7 +1533,7 @@ class BrickBreaker {
     }
     if (type === 'GEMSTONE') this.gemHits = 5;
 
-    // Hero Morph Power-up Drops!
+    // Hero Morph Power-up Drops
     if (type === 'HERO_SAMURAI') {
       this.activeHeroMorph = HEROES['CYBER_SAMURAI'];
       this.audio.play('morph');
@@ -1536,8 +1545,6 @@ class BrickBreaker {
       this._updateHeroDisplay();
     } else if (type === 'HERO_CHRONO') {
       this.activeHeroMorph = HEROES['CHRONO_MAGE'];
-      this.aPU['BULLET_TIME'] = true;
-      this.puT['BULLET_TIME'] = 12;
       this.audio.play('morph');
       this._updateHeroDisplay();
     }
@@ -1666,46 +1673,34 @@ class BrickBreaker {
     }
   }
 
-  // ── MAIN LOOP ────────────────────────────────────────────────
+  // ── MAIN LOOP (PURE SMOOTH 60 FPS) ───────────────────────────
   _loop(t) {
     requestAnimationFrame(ts => this._loop(ts));
-    const rawDt = Math.min((t - this._lastT) / 1000, 0.05);
+    const dt = Math.min((t - this._lastT) / 1000, 0.05);
     this._lastT = t;
-    this.time += rawDt;
+    this.time += dt;
 
-    // Bullet-Time active ONLY when BULLET_TIME powerup is collected or Chrono Mage is active!
-    const bulletTimeActive = this.aPU['BULLET_TIME'] || (this.hero.id === 'CHRONO_MAGE' && !this.ball?.stuck);
-    if (bulletTimeActive && this.paddle && this.state === 'playing') {
-      const pSpeed = Math.abs(this.paddle.x - this.paddleLastX) / Math.max(rawDt, 0.001);
-      this.paddleLastX = this.paddle.x;
-      const targetScale = Math.min(1.0, Math.max(0.12, (pSpeed / 320)));
-      this.timeScale += (targetScale - this.timeScale) * 0.25;
-    } else {
-      this.timeScale = 1.0; // 100% normal smooth arcade speed
-    }
-
-    const dt = rawDt * this.timeScale;
-
-    this.bg.update(rawDt, this.mx, this.my);
+    this.bg.update(dt, this.mx, this.my);
     this.bg.render();
 
-    if (this.state === 'playing') this._update(dt, rawDt);
-    if (this.state === 'start')   this._runDemo(rawDt);
+    if (this.state === 'playing') this._update(dt);
+    if (this.state === 'start')   this._runDemo(dt);
 
     this._render();
   }
 
   // ── UPDATE ───────────────────────────────────────────────────
-  _update(dt, rawDt) {
-    const slow = this.aPU['SLOWMO'] ? 0.45 : 1;
+  _update(dt) {
+    // Clean slow-motion only when SLOWMO or BULLET_TIME powerup is active
+    const slow = (this.aPU['SLOWMO'] || this.aPU['BULLET_TIME']) ? 0.42 : 1.0;
     const sdt  = dt * slow;
-    this.levelTime += rawDt;
+    this.levelTime += dt;
 
-    this.shake.update(rawDt);
+    this.shake.update(dt);
     this.laserCD = Math.max(0, this.laserCD - sdt);
 
     if (this.isUltActive && (this.activeHeroMorph?.id === 'SIEGE_MECH' || this.hero.id === 'SIEGE_MECH')) {
-      this.ultTimer -= rawDt;
+      this.ultTimer -= dt;
       this.shake.add(0.2);
       this.bricks.forEach(b => {
         if (!b.alive) return;
@@ -1736,8 +1731,8 @@ class BrickBreaker {
     // Keyboard paddle
     const cur = this.activeHeroMorph || this.hero;
     const pSpeed = cur.id === 'CYBER_SAMURAI' ? 700 : 560;
-    if (this.keys['ArrowLeft']  || this.keys['KeyA']) this.paddle.x -= pSpeed * rawDt;
-    if (this.keys['ArrowRight'] || this.keys['KeyD']) this.paddle.x += pSpeed * rawDt;
+    if (this.keys['ArrowLeft']  || this.keys['KeyA']) this.paddle.x -= pSpeed * dt;
+    if (this.keys['ArrowRight'] || this.keys['KeyD']) this.paddle.x += pSpeed * dt;
     this._clampP();
 
     // Anomalies
@@ -1811,10 +1806,10 @@ class BrickBreaker {
       this._checkWin();
     }
 
-    this.flashes.forEach(f => f.update(rawDt));
+    this.flashes.forEach(f => f.update(dt));
     this.flashes = this.flashes.filter(f => f.alive());
-    this.bricks.forEach(b => b.update(rawDt));
-    this.ps.update(rawDt, this.AW, this.AH);
+    this.bricks.forEach(b => b.update(dt));
+    this.ps.update(dt, this.AW, this.AH);
 
     this._updateHUD();
   }
