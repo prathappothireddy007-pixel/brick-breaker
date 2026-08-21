@@ -1,9 +1,9 @@
 'use strict';
 
 /* ============================================================
-   BRICK BREAKER: ROGUELIKE BULLET-TIME OVERHAUL (v3.0)
-   - Hero Classes with Ultimate Gauges & Actives
-   - "SUPERHOT" Time Dilation (Time moves when you move)
+   BRICK BREAKER: ROGUELIKE BULLET-TIME OVERHAUL (v3.1)
+   - Dynamic Hero Morphs & Bullet-Time as In-Game Power-Ups
+   - Reliable Starter Hero Selection & HUD Badges
    - Roguelike Relic Draft & Synergies (12+ Stackable Relics)
    - Dynamic Anomalies: Gravity Wells, Portals & Physics Debris
    - 5 Themed Worlds · Multi-Phase Boss Encounters
@@ -11,32 +11,32 @@
 
 // ─── HERO CLASSES ─────────────────────────────────────────────
 const HEROES = {
-  CHRONO_MAGE: {
-    id: 'CHRONO_MAGE',
-    name: 'CHRONO MAGE',
-    icon: '⏳',
-    color: '#00f5ff',
-    passiveText: 'Passive: +15% Deeper Bullet-Time',
-    ultName: 'CHRONO REWIND',
-    ultDesc: 'Rewinds ball 2.5s into the past & returns it safely to paddle.',
-  },
   CYBER_SAMURAI: {
     id: 'CYBER_SAMURAI',
     name: 'CYBER SAMURAI',
     icon: '⚔️',
     color: '#ff00ff',
-    passiveText: 'Passive: +25% Speed & Slices Debris',
+    passiveText: '+25% Speed & Slices Debris',
     ultName: 'DIMENSIONAL SLASH',
-    ultDesc: 'Launches 3 energy slashes slicing entire vertical columns.',
+    ultDesc: 'Slices vertical energy blades through entire brick columns.',
+  },
+  CHRONO_MAGE: {
+    id: 'CHRONO_MAGE',
+    name: 'CHRONO MAGE',
+    icon: '⏳',
+    color: '#00f5ff',
+    passiveText: 'Starts with Time-Stop & Rewind',
+    ultName: 'CHRONO TIME-STOP',
+    ultDesc: 'Freezes / slows time when you pause moving & grants emergency ball rewinds.',
   },
   SIEGE_MECH: {
     id: 'SIEGE_MECH',
     name: 'SIEGE MECH',
     icon: '🤖',
     color: '#ffd700',
-    passiveText: 'Passive: +20% Wider Heavy Paddle',
+    passiveText: '+20% Wider Armored Paddle',
     ultName: 'HYPER CANNON',
-    ultDesc: 'Fires an orbital hyper-beam destroying everything in path.',
+    ultDesc: 'Fires continuous high-energy laser beams destroying rows of bricks and boss HP.',
   }
 };
 
@@ -142,51 +142,11 @@ const RELICS = [
 
 // ─── WORLD DEFINITIONS ────────────────────────────────────────
 const WORLDS = [
-  {
-    id: 'neon',
-    name: 'NEON CITY',
-    bodyClass: '',
-    accent: '#00f5ff',
-    accent2: '#aa44ff',
-    bgType: 'neon',
-    levels: [1, 2, 3],
-  },
-  {
-    id: 'lava',
-    name: 'LAVA CORE',
-    bodyClass: 'world-lava',
-    accent: '#ff6a00',
-    accent2: '#ff2244',
-    bgType: 'lava',
-    levels: [4, 5, 6],
-  },
-  {
-    id: 'ocean',
-    name: 'DEEP OCEAN',
-    bodyClass: 'world-ocean',
-    accent: '#00d4ff',
-    accent2: '#00ff88',
-    bgType: 'ocean',
-    levels: [7, 8, 9],
-  },
-  {
-    id: 'space',
-    name: 'CYBER SPACE',
-    bodyClass: 'world-space',
-    accent: '#cc44ff',
-    accent2: '#ff44cc',
-    bgType: 'space',
-    levels: [10, 11, 12],
-  },
-  {
-    id: 'glitch',
-    name: 'FINAL GRID',
-    bodyClass: 'world-glitch',
-    accent: '#00ff44',
-    accent2: '#ffe600',
-    bgType: 'glitch',
-    levels: [13, 14, 15],
-  },
+  { id: 'neon',  name: 'NEON CITY',   bodyClass: '',            accent: '#00f5ff', accent2: '#aa44ff', bgType: 'neon',  levels: [1, 2, 3] },
+  { id: 'lava',  name: 'LAVA CORE',   bodyClass: 'world-lava',  accent: '#ff6a00', accent2: '#ff2244', bgType: 'lava',  levels: [4, 5, 6] },
+  { id: 'ocean', name: 'DEEP OCEAN',  bodyClass: 'world-ocean', accent: '#00d4ff', accent2: '#00ff88', bgType: 'ocean', levels: [7, 8, 9] },
+  { id: 'space', name: 'CYBER SPACE', bodyClass: 'world-space', accent: '#cc44ff', accent2: '#ff44cc', bgType: 'space', levels: [10, 11, 12] },
+  { id: 'glitch',name: 'FINAL GRID',  bodyClass: 'world-glitch',accent: '#00ff44', accent2: '#ffe600', bgType: 'glitch',levels: [13, 14, 15] },
 ];
 
 function getWorldForLevel(level) {
@@ -196,9 +156,7 @@ function getWorldForLevel(level) {
   return { ...WORLDS[4], name: 'FINAL GRID+', levels: [] };
 }
 
-function isBossLevel(level) {
-  return level % 3 === 0;
-}
+function isBossLevel(level) { return level % 3 === 0; }
 
 // ─── CONFIGURATION CONSTANTS ─────────────────────────────────
 const CFG = {
@@ -231,26 +189,22 @@ const BTYPE = {
   ARMORED:   { hp: 5,        score: 500, color: '#cc8800' },
 };
 
+// Expanded In-Game Power-Ups list including Hero Morphs & Bullet-Time!
 const PU = {
-  MULTIBALL: { label: 'MULTI',    color: '#00f5ff', dur: 0 },
-  BIGPADDLE: { label: 'BIG',      color: '#00ff88', dur: 12 },
-  LASER:     { label: 'LASER',    color: '#ff3366', dur: 10 },
-  SLOWMO:    { label: 'SLOW',     color: '#aa44ff', dur: 8  },
-  SHIELD:    { label: 'SHIELD',   color: '#ffd700', dur: 15 },
-  FIREBALL:  { label: 'FIRE',     color: '#ff6a00', dur: 7  },
-  GEMSTONE:  { label: 'GEM ×10', color: '#ff44cc', dur: 0,  hits: 5 },
-  STORM:     { label: 'STORM',    color: '#ffe600', dur: 5  },
-  GRAVITY:   { label: 'GRAV',     color: '#cc44ff', dur: 8  },
-  MIRROR:    { label: 'MIRROR',   color: '#88ffdd', dur: 10 },
-};
-
-const ACHIEVEMENTS = {
-  FIRST_COMBO:   { id: 'FIRST_COMBO',   name: 'COMBO KING',     desc: 'Reach a ×5 combo',       icon: '🔥' },
-  NO_DAMAGE:     { id: 'NO_DAMAGE',     name: 'UNTOUCHABLE',    desc: 'Clear a level without losing a life', icon: '🛡️' },
-  SPEED_RUN:     { id: 'SPEED_RUN',     name: 'SPEED DEMON',    desc: 'Clear a level in under 30s', icon: '⚡' },
-  BOSS_SLAYER:   { id: 'BOSS_SLAYER',   name: 'BOSS SLAYER',    desc: 'Defeat your first boss',   icon: '⚔️' },
-  POWER_HOARDER: { id: 'POWER_HOARDER', name: 'POWER HOARDER',  desc: 'Hold 3 power-ups at once', icon: '💎' },
-  RELIC_MASTER:  { id: 'RELIC_MASTER',  name: 'RELIC HOARDER',  desc: 'Equip 4 relics in one run', icon: '👑' },
+  MULTIBALL:    { label: 'MULTI',       color: '#00f5ff', dur: 0 },
+  BIGPADDLE:    { label: 'BIG',         color: '#00ff88', dur: 12 },
+  LASER:        { label: 'LASER',       color: '#ff3366', dur: 10 },
+  SLOWMO:       { label: 'SLOW',        color: '#aa44ff', dur: 8  },
+  SHIELD:       { label: 'SHIELD',      color: '#ffd700', dur: 15 },
+  FIREBALL:     { label: 'FIRE',        color: '#ff6a00', dur: 8  },
+  GEMSTONE:     { label: 'GEM ×10',    color: '#ff44cc', dur: 0, hits: 5 },
+  STORM:        { label: 'STORM',       color: '#ffe600', dur: 6  },
+  GRAVITY:      { label: 'GRAV',        color: '#cc44ff', dur: 8  },
+  MIRROR:       { label: 'MIRROR',      color: '#88ffdd', dur: 10 },
+  BULLET_TIME:  { label: '⏳ TIME-STOP', color: '#00f5ff', dur: 12 },
+  HERO_SAMURAI: { label: '⚔️ SAMURAI',  color: '#ff00ff', dur: 14 },
+  HERO_MECH:    { label: '🤖 MECH BEAM', color: '#ffd700', dur: 10 },
+  HERO_CHRONO:  { label: '⏳ REWIND',    color: '#00d4ff', dur: 12 },
 };
 
 // ─── AUDIO ENGINE ─────────────────────────────────────────────
@@ -289,7 +243,7 @@ class AudioEngine {
       case 'ult_fire':    this._arp([440, 880, 1320, 1760], 0.08, t); this._noise(0.6, 0.4, t); break;
       case 'portal':      this._arp([1200, 900, 1500], 0.05, t); break;
       case 'lightning':   this._noise(0.4, 0.15, t); this._tone(900, 'sawtooth', 0.25, 0.1, t, -600); break;
-      case 'achievement': this._arp([523, 784, 1047, 1568], 0.12, t); break;
+      case 'morph':       this._arp([300, 600, 900, 1200], 0.05, t); break;
     }
   }
 
@@ -323,7 +277,7 @@ class AudioEngine {
   }
 }
 
-// ─── PARTICLE SYSTEM ──────────────────────────────────────────
+// ─── PARTICLE & DEBRIS SYSTEM ─────────────────────────────────
 class Particle {
   constructor(x, y, vx, vy, color, size, life, type = 'shard') {
     this.x = x; this.y = y; this.vx = vx; this.vy = vy;
@@ -356,7 +310,6 @@ class TextParticle {
   alive() { return this.life > 0; }
 }
 
-// Falling Physics Debris Chunk
 class DebrisChunk {
   constructor(x, y, w, h, color) {
     this.x = x; this.y = y; this.w = w; this.h = h; this.color = color;
@@ -367,12 +320,9 @@ class DebrisChunk {
     this.life = 4.0;
   }
   update(dt, AW, AH) {
-    this.vy += 650 * dt; // gravity
-    this.x += this.vx * dt;
-    this.y += this.vy * dt;
-    this.rot += this.rotV * dt;
-    this.life -= dt;
-    // Wall bounce
+    this.vy += 650 * dt;
+    this.x += this.vx * dt; this.y += this.vy * dt;
+    this.rot += this.rotV * dt; this.life -= dt;
     if (this.x < 0 || this.x + this.w > AW) { this.vx = -this.vx * 0.7; }
     if (this.y > AH + 50 || this.life <= 0) this.alive = false;
   }
@@ -380,18 +330,12 @@ class DebrisChunk {
     ctx.save();
     ctx.translate(this.x + this.w/2, this.y + this.h/2);
     ctx.rotate(this.rot);
-    ctx.fillStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 8;
+    ctx.fillStyle = this.color; ctx.shadowColor = this.color; ctx.shadowBlur = 8;
     ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(-this.w/2, -this.h/2, this.w, this.h);
     ctx.restore();
   }
 }
 
-// Lightning Arc
 class LightningArc {
   constructor(x1, y1, x2, y2, color = '#00f5ff') {
     this.x1 = x1; this.y1 = y1; this.x2 = x2; this.y2 = y2;
@@ -401,18 +345,12 @@ class LightningArc {
   render(ctx) {
     const a = this.life / this.maxLife;
     ctx.save();
-    ctx.globalAlpha = a;
-    ctx.strokeStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 14;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(this.x1, this.y1);
+    ctx.globalAlpha = a; ctx.strokeStyle = this.color; ctx.shadowColor = this.color;
+    ctx.shadowBlur = 14; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(this.x1, this.y1);
     const midX = (this.x1 + this.x2) / 2 + (Math.random() - 0.5) * 30;
     const midY = (this.y1 + this.y2) / 2 + (Math.random() - 0.5) * 30;
-    ctx.lineTo(midX, midY);
-    ctx.lineTo(this.x2, this.y2);
-    ctx.stroke();
+    ctx.lineTo(midX, midY); ctx.lineTo(this.x2, this.y2); ctx.stroke();
     ctx.restore();
   }
   alive() { return this.life > 0; }
@@ -442,17 +380,9 @@ class ParticleSystem {
     this.emit(cx, cy, '#00f5ff', 8, { speed: 160, type: 'circle', sizeR: [1,4], lifeR: [0.3,0.7], gravity: false });
   }
 
-  addText(x, y, text, color = '#00f5ff', sz = 22) {
-    this.tp.push(new TextParticle(x, y, text, color, sz));
-  }
-
-  addDebris(x, y, w, h, color) {
-    this.debris.push(new DebrisChunk(x, y, w, h, color));
-  }
-
-  addArc(x1, y1, x2, y2, color) {
-    this.arcs.push(new LightningArc(x1, y1, x2, y2, color));
-  }
+  addText(x, y, text, color = '#00f5ff', sz = 22) { this.tp.push(new TextParticle(x, y, text, color, sz)); }
+  addDebris(x, y, w, h, color) { this.debris.push(new DebrisChunk(x, y, w, h, color)); }
+  addArc(x1, y1, x2, y2, color) { this.arcs.push(new LightningArc(x1, y1, x2, y2, color)); }
 
   update(dt, AW, AH) {
     this.p  = this.p.filter(p => { p.update(dt); return p.alive(); });
@@ -464,30 +394,18 @@ class ParticleSystem {
   render(ctx) {
     this.p.forEach(p => {
       ctx.save();
-      ctx.globalAlpha = p.alpha;
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
+      ctx.globalAlpha = p.alpha; ctx.translate(p.x, p.y); ctx.rotate(p.rot);
       ctx.shadowColor = p.color; ctx.shadowBlur = 6;
       if (p.type === 'shard') {
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.moveTo(0, -p.size);
-        ctx.lineTo(p.size * 0.6, p.size * 0.5);
-        ctx.lineTo(-p.size * 0.6, p.size * 0.5);
-        ctx.closePath();
-        ctx.fill();
+        ctx.fillStyle = p.color; ctx.beginPath();
+        ctx.moveTo(0, -p.size); ctx.lineTo(p.size * 0.6, p.size * 0.5); ctx.lineTo(-p.size * 0.6, p.size * 0.5);
+        ctx.closePath(); ctx.fill();
       } else if (p.type === 'spark') {
-        ctx.strokeStyle = p.color;
-        ctx.lineWidth = p.size;
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.moveTo(-p.size * 2, 0); ctx.lineTo(p.size * 2, 0);
-        ctx.stroke();
+        ctx.strokeStyle = p.color; ctx.lineWidth = p.size;
+        ctx.beginPath(); ctx.moveTo(-p.size * 2, 0); ctx.lineTo(p.size * 2, 0); ctx.stroke();
       } else {
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, Math.max(0.5, p.size * p.alpha), 0, Math.PI*2);
-        ctx.fill();
+        ctx.fillStyle = p.color; ctx.beginPath();
+        ctx.arc(0, 0, Math.max(0.5, p.size * p.alpha), 0, Math.PI*2); ctx.fill();
       }
       ctx.restore();
     });
@@ -497,14 +415,11 @@ class ParticleSystem {
 
     this.tp.forEach(p => {
       ctx.save();
-      ctx.globalAlpha = p.alpha;
-      ctx.translate(p.x, p.y);
-      ctx.scale(p.scale, p.scale);
+      ctx.globalAlpha = p.alpha; ctx.translate(p.x, p.y); ctx.scale(p.scale, p.scale);
       ctx.font = `900 ${p.sz}px Orbitron, monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.shadowColor = p.color; ctx.shadowBlur = 18;
-      ctx.fillStyle = p.color;
-      ctx.fillText(p.text, 0, 0);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, 0, 0);
       ctx.restore();
     });
   }
@@ -512,12 +427,10 @@ class ParticleSystem {
   clear() { this.p = []; this.tp = []; this.debris = []; this.arcs = []; }
 }
 
-// ─── DYNAMIC ANOMALIES ────────────────────────────────────────
-// Gravity Singularity Well
+// ─── ANOMALIES ────────────────────────────────────────────────
 class GravityWell {
   constructor(x, y, strength = 18000, radius = 80) {
-    this.x = x; this.y = y; this.strength = strength; this.radius = radius;
-    this.rot = 0;
+    this.x = x; this.y = y; this.strength = strength; this.radius = radius; this.rot = 0;
   }
   update(dt) { this.rot += dt * 3.5; }
   pull(ball, dt) {
@@ -531,27 +444,15 @@ class GravityWell {
   }
   render(ctx) {
     ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rot);
+    ctx.translate(this.x, this.y); ctx.rotate(this.rot);
     ctx.shadowColor = '#cc44ff'; ctx.shadowBlur = 20;
     const g = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-    g.addColorStop(0, '#000000');
-    g.addColorStop(0.4, 'rgba(200,68,255,0.4)');
-    g.addColorStop(1, 'rgba(200,68,255,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill();
-
-    ctx.strokeStyle = '#cc44ff'; ctx.lineWidth = 1.5;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.arc(0, 0, this.radius * (0.3 + i * 0.25), i, i + Math.PI);
-      ctx.stroke();
-    }
+    g.addColorStop(0, '#000000'); g.addColorStop(0.4, 'rgba(200,68,255,0.4)'); g.addColorStop(1, 'rgba(200,68,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
 }
 
-// Quantum Portal Pair (Blue & Orange)
 class PortalPair {
   constructor(x1, y1, x2, y2, r = 22) {
     this.p1 = { x: x1, y: y1, color: '#00f5ff', cd: 0 };
@@ -568,8 +469,7 @@ class PortalPair {
       if (src.cd > 0) return false;
       const dx = ball.x - src.x, dy = ball.y - src.y;
       if (dx*dx + dy*dy <= (this.r + ball.r)*(this.r + ball.r)) {
-        ball.x = dst.x;
-        ball.y = dst.y;
+        ball.x = dst.x; ball.y = dst.y;
         src.cd = 0.6; dst.cd = 0.6;
         audio.play('portal');
         ps.emit(src.x, src.y, src.color, 16, { speed: 200, type: 'spark' });
@@ -583,69 +483,50 @@ class PortalPair {
   render(ctx) {
     [this.p1, this.p2].forEach(p => {
       ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(this.rot);
+      ctx.translate(p.x, p.y); ctx.rotate(this.rot);
       ctx.shadowColor = p.color; ctx.shadowBlur = 18;
-      ctx.strokeStyle = p.color; ctx.lineWidth = 3;
-      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = p.color; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
       ctx.beginPath(); ctx.arc(0, 0, this.r, 0, Math.PI*2); ctx.stroke();
-      ctx.fillStyle = p.color + '33';
-      ctx.beginPath(); ctx.arc(0, 0, this.r * 0.6, 0, Math.PI*2); ctx.fill();
       ctx.restore();
     });
   }
 }
 
-// ─── THEMED BACKGROUND RENDERER ───────────────────────────────
+// ─── BACKGROUND RENDERER ──────────────────────────────────────
 class BgRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    this.time = 0;
-    this.mx = 0; this.my = 0;
-    this.stars = [];
-    this.bgType = 'neon';
-    this.accent = '#00f5ff';
-    this.lavaBlobs = [];
-    this.bubbles = [];
+    this.time = 0; this.mx = 0; this.my = 0;
+    this.stars = []; this.bgType = 'neon'; this.accent = '#00f5ff';
+    this.lavaBlobs = []; this.bubbles = [];
     this._initParticles();
   }
 
-  setTheme(bgType, accent) {
-    this.bgType = bgType;
-    this.accent = accent;
-    this._initParticles();
-  }
+  setTheme(bgType, accent) { this.bgType = bgType; this.accent = accent; this._initParticles(); }
 
   _initParticles() {
-    const W = this.canvas.width || window.innerWidth;
-    const H = this.canvas.height || window.innerHeight;
+    const W = this.canvas.width || window.innerWidth, H = this.canvas.height || window.innerHeight;
     this.stars = [];
     for (let i = 0; i < 90; i++) {
       this.stars.push({
         x: Math.random() * W, y: Math.random() * H,
-        sz: 0.5 + Math.random() * 2,
-        spd: 8 + Math.random() * 28,
-        op: 0.2 + Math.random() * 0.7,
-        hue: Math.random() < 0.5 ? 185 : 280,
+        sz: 0.5 + Math.random() * 2, spd: 8 + Math.random() * 28,
+        op: 0.2 + Math.random() * 0.7, hue: Math.random() < 0.5 ? 185 : 280,
       });
     }
     this.lavaBlobs = [];
     for (let i = 0; i < 12; i++) {
       this.lavaBlobs.push({
         x: Math.random() * W, y: H * 0.6 + Math.random() * H * 0.4,
-        r: 20 + Math.random() * 60,
-        spd: 12 + Math.random() * 18,
-        phase: Math.random() * Math.PI * 2,
+        r: 20 + Math.random() * 60, spd: 12 + Math.random() * 18, phase: Math.random() * Math.PI * 2,
       });
     }
     this.bubbles = [];
     for (let i = 0; i < 30; i++) {
       this.bubbles.push({
         x: Math.random() * W, y: H + Math.random() * H,
-        r: 2 + Math.random() * 8,
-        spd: 20 + Math.random() * 40,
-        phase: Math.random() * Math.PI * 2,
+        r: 2 + Math.random() * 8, spd: 20 + Math.random() * 40, phase: Math.random() * Math.PI * 2,
       });
     }
   }
@@ -655,19 +536,9 @@ class BgRenderer {
   update(dt, mx, my) {
     this.time += dt; this.mx = mx; this.my = my;
     const H = this.canvas.height, W = this.canvas.width;
-    this.stars.forEach(s => {
-      s.y -= s.spd * dt;
-      if (s.y < -4) { s.y = H + 4; s.x = Math.random() * W; }
-    });
-    this.lavaBlobs.forEach(b => {
-      b.y -= b.spd * dt;
-      if (b.y + b.r < 0) { b.y = H + b.r; b.x = Math.random() * W; }
-    });
-    this.bubbles.forEach(b => {
-      b.y -= b.spd * dt;
-      b.x += Math.sin(this.time * 0.8 + b.phase) * 0.5;
-      if (b.y + b.r < 0) { b.y = H + b.r; b.x = Math.random() * W; }
-    });
+    this.stars.forEach(s => { s.y -= s.spd * dt; if (s.y < -4) { s.y = H + 4; s.x = Math.random() * W; } });
+    this.lavaBlobs.forEach(b => { b.y -= b.spd * dt; if (b.y + b.r < 0) { b.y = H + b.r; b.x = Math.random() * W; } });
+    this.bubbles.forEach(b => { b.y -= b.spd * dt; if (b.y + b.r < 0) { b.y = H + b.r; b.x = Math.random() * W; } });
   }
 
   render() {
@@ -700,8 +571,7 @@ class BgRenderer {
       const p = Math.sin(this.time * 1.2 + b.phase) * 0.3 + 0.7;
       const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * p);
       g.addColorStop(0, 'rgba(255,140,0,0.18)'); g.addColorStop(1, 'rgba(255,40,0,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(b.x, b.y, b.r * p, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * p, 0, Math.PI*2); ctx.fill();
     });
     this._grid(ctx, W, H, 'rgba(255,100,0,0.06)');
   }
@@ -709,14 +579,10 @@ class BgRenderer {
   _renderOcean() {
     const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
     if (!W || !H) return;
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#000d1a'); bg.addColorStop(0.5, '#001424'); bg.addColorStop(1, '#001a30');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#000d1a'; ctx.fillRect(0, 0, W, H);
     this.bubbles.forEach(b => {
-      ctx.save();
-      ctx.globalAlpha = 0.25; ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke();
-      ctx.restore();
+      ctx.save(); ctx.globalAlpha = 0.25; ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke(); ctx.restore();
     });
     this._grid(ctx, W, H, 'rgba(0,180,255,0.05)');
   }
@@ -724,9 +590,7 @@ class BgRenderer {
   _renderSpace() {
     const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
     if (!W || !H) return;
-    const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.9);
-    bg.addColorStop(0, '#0a0020'); bg.addColorStop(0.5, '#000010'); bg.addColorStop(1, '#000008');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#0a0020'; ctx.fillRect(0, 0, W, H);
     this._stars(ctx, [280, 300]);
     this._grid(ctx, W, H, 'rgba(150,50,255,0.05)');
   }
@@ -741,14 +605,10 @@ class BgRenderer {
 
   _grid(ctx, W, H, color) {
     const vx = W/2, vy = H*0.22;
-    ctx.save();
-    ctx.strokeStyle = color; ctx.lineWidth = 0.6;
-    for (let i = -14; i <= 14; i++) {
-      ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(vx + i*65, H); ctx.stroke();
-    }
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 0.6;
+    for (let i = -14; i <= 14; i++) { ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(vx + i*65, H); ctx.stroke(); }
     for (let i = 0; i < 18; i++) {
-      const t = i / 17;
-      const y = vy + (H - vy) * Math.pow(t, 1.4);
+      const t = i / 17, y = vy + (H - vy) * Math.pow(t, 1.4);
       const xw = (y - vy) / (H - vy) * W * 0.85;
       ctx.beginPath(); ctx.moveTo(vx - xw/2, y); ctx.lineTo(vx + xw/2, y); ctx.stroke();
     }
@@ -759,8 +619,7 @@ class BgRenderer {
     this.stars.forEach(s => {
       const twink = Math.sin(this.time * 2.5 + s.x * 0.05) * 0.3 + 0.7;
       const hue = hues[Math.floor(Math.random() < 0.5 ? 0 : 1)];
-      ctx.save();
-      ctx.globalAlpha = s.op * twink;
+      ctx.save(); ctx.globalAlpha = s.op * twink;
       ctx.shadowColor = `hsl(${hue},100%,75%)`; ctx.shadowBlur = 4;
       ctx.fillStyle = `hsl(${hue},100%,85%)`;
       ctx.beginPath(); ctx.arc(s.x, s.y, s.sz, 0, Math.PI*2); ctx.fill();
@@ -775,11 +634,9 @@ class Trail {
   add(x, y) { this.pts.unshift({ x, y }); if (this.pts.length > this.n) this.pts.pop(); }
   render(ctx, r, color) {
     for (let i = this.pts.length - 1; i >= 0; i--) {
-      const p = this.pts[i]; const t = 1 - i / this.pts.length;
-      ctx.save(); ctx.globalAlpha = t * 0.5;
-      ctx.shadowColor = color; ctx.shadowBlur = 10 * t;
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5, r * t * 0.8), 0, Math.PI*2); ctx.fill();
+      const p = this.pts[i], t = 1 - i / this.pts.length;
+      ctx.save(); ctx.globalAlpha = t * 0.5; ctx.shadowColor = color; ctx.shadowBlur = 10 * t;
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5, r * t * 0.8), 0, Math.PI*2); ctx.fill();
       ctx.restore();
     }
   }
@@ -788,19 +645,15 @@ class Trail {
 
 class Flash {
   constructor(x, y, color) {
-    this.x = x; this.y = y; this.color = color;
-    this.r = 0; this.life = 0.22; this.ml = 0.22;
+    this.x = x; this.y = y; this.color = color; this.r = 0; this.life = 0.22; this.ml = 0.22;
   }
   update(dt) { this.life -= dt; this.r = (1 - this.life / this.ml) * 34; }
   render(ctx) {
     const a = (this.life / this.ml) * 0.85;
     ctx.save(); ctx.globalAlpha = a;
     const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
-    g.addColorStop(0, 'rgba(255,255,255,0.95)');
-    g.addColorStop(0.3, this.color + 'cc');
-    g.addColorStop(1, this.color + '00');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fill();
+    g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.3, this.color + 'cc'); g.addColorStop(1, this.color + '00');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
   alive() { return this.life > 0; }
@@ -821,43 +674,29 @@ class Shake {
 // ─── BRICK CLASS ──────────────────────────────────────────────
 class Brick {
   constructor(x, y, w, h, type, ci = 0, enterDelay = 0) {
-    this.x = x; this.y = y; this.w = w; this.h = h;
-    this.type = type;
+    this.x = x; this.y = y; this.w = w; this.h = h; this.type = type;
     const bt = BTYPE[type];
     this.hp = bt.hp === Infinity ? 999 : bt.hp;
-    this.maxHp = this.hp;
-    this.indestructible = (bt.hp === Infinity);
-    this.score = bt.score;
-    this.color = bt.color || BRICK_COLORS[ci % BRICK_COLORS.length];
-    this.alive = true;
-    this.puType = null;
-    this.pulse = Math.random() * Math.PI * 2;
+    this.maxHp = this.hp; this.indestructible = (bt.hp === Infinity);
+    this.score = bt.score; this.color = bt.color || BRICK_COLORS[ci % BRICK_COLORS.length];
+    this.alive = true; this.puType = null; this.pulse = Math.random() * Math.PI * 2;
     this.shakeX = 0; this.shakeY = 0; this.shakeT = 0;
-    this.ghost = (type === 'GHOST');
-    this.ghostRevealed = false;
-    this.enterDelay = enterDelay;
-    this._targetY = y;
-    this.y = y - 80 - enterDelay * 30;
-    this.entering = true;
+    this.ghost = (type === 'GHOST'); this.ghostRevealed = false;
+    this.enterDelay = enterDelay; this._targetY = y;
+    this.y = y - 80 - enterDelay * 30; this.entering = true;
   }
 
   hit() {
-    if (this.ghost && !this.ghostRevealed) {
-      this.ghostRevealed = true;
-      this._shake(4);
-      return false;
-    }
+    if (this.ghost && !this.ghostRevealed) { this.ghostRevealed = true; this._shake(4); return false; }
     if (this.indestructible) { this._shake(5); return false; }
     this.hp--;
     if (this.hp <= 0) { this.alive = false; return true; }
-    this._shake(4);
-    return false;
+    this._shake(4); return false;
   }
 
   _shake(mag) {
     this.shakeT = 0.12;
-    this.shakeX = (Math.random() - 0.5) * mag;
-    this.shakeY = (Math.random() - 0.5) * mag;
+    this.shakeX = (Math.random() - 0.5) * mag; this.shakeY = (Math.random() - 0.5) * mag;
   }
 
   update(dt) {
@@ -884,11 +723,8 @@ class Brick {
 
     ctx.save();
     ctx.globalAlpha = ghostAlpha;
-
     const gf = ctx.createLinearGradient(x, y, x, y + this.h);
-    gf.addColorStop(0, 'rgba(255,255,255,0.16)');
-    gf.addColorStop(0.45, 'rgba(255,255,255,0.05)');
-    gf.addColorStop(1, 'rgba(0,0,0,0.22)');
+    gf.addColorStop(0, 'rgba(255,255,255,0.16)'); gf.addColorStop(0.45, 'rgba(255,255,255,0.05)'); gf.addColorStop(1, 'rgba(0,0,0,0.22)');
     this._rr(ctx, x+1, y+1, this.w-2, this.h-2, 4);
     ctx.fillStyle = gf; ctx.fill();
 
@@ -907,10 +743,8 @@ class Brick {
     }
 
     if (['POWERUP','EXPLOSIVE','GHOST'].includes(this.type)) {
-      ctx.shadowBlur = 8; ctx.shadowColor = this.color;
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold 11px sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowBlur = 8; ctx.shadowColor = this.color; ctx.fillStyle = '#fff';
+      ctx.font = `bold 11px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const icon = this.type === 'POWERUP' ? '★' : this.type === 'EXPLOSIVE' ? '✕' : '👻';
       ctx.fillText(icon, x + this.w/2, y + this.h/2);
     }
@@ -934,22 +768,11 @@ class Brick {
 // ─── BOSS CLASS ───────────────────────────────────────────────
 class Boss {
   constructor(x, y, w, h, world, maxHp = 20) {
-    this.x = x; this.y = y; this.w = w; this.h = h;
-    this.world = world;
-    this.hp = maxHp; this.maxHp = maxHp;
-    this.alive = true;
-    this.phase = 1;
-    this.t = 0;
-    this.baseX = x;
-    this.pulse = 0;
-    this.shootT = 0;
-    this.shootInterval = 3.2;
-    this.projectiles = [];
-    this.color = world.accent2;
-    this.name = this._bossName();
-    this._targetY = y;
-    this.y = -h - 20;
-    this.entering = true;
+    this.x = x; this.y = y; this.w = w; this.h = h; this.world = world;
+    this.hp = maxHp; this.maxHp = maxHp; this.alive = true; this.phase = 1;
+    this.t = 0; this.baseX = x; this.pulse = 0; this.shootT = 0; this.shootInterval = 3.2;
+    this.projectiles = []; this.color = world.accent2; this.name = this._bossName();
+    this._targetY = y; this.y = -h - 20; this.entering = true;
   }
 
   _bossName() {
@@ -964,11 +787,8 @@ class Boss {
     if (!this.alive) return false;
     this.hp--;
     if (this.hp <= 0) { this.alive = false; return true; }
-    if (this.hpRatio < 0.25 && this.phase < 3) {
-      this.phase = 3; this.shootInterval = 1.8;
-    } else if (this.hpRatio < 0.5 && this.phase < 2) {
-      this.phase = 2; this.shootInterval = 2.4;
-    }
+    if (this.hpRatio < 0.25 && this.phase < 3) { this.phase = 3; this.shootInterval = 1.8; }
+    else if (this.hpRatio < 0.5 && this.phase < 2) { this.phase = 2; this.shootInterval = 2.4; }
     return false;
   }
 
@@ -985,10 +805,7 @@ class Boss {
       this.shootT = this.shootInterval;
       this._shoot();
     }
-    this.projectiles.forEach(p => {
-      p.x += p.vx * dt; p.y += p.vy * dt;
-      p.life -= dt;
-    });
+    this.projectiles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; });
     this.projectiles = this.projectiles.filter(p => p.life > 0 && p.y < 2000);
   }
 
@@ -1008,28 +825,21 @@ class Boss {
     const p = Math.sin(this.pulse) * 0.4 + 0.6;
     ctx.save();
     const g = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.h);
-    g.addColorStop(0, this.color + 'dd');
-    g.addColorStop(1, '#000');
-    ctx.fillStyle = g;
-    ctx.shadowColor = this.color; ctx.shadowBlur = 28 * p;
-    this._rr(ctx, this.x, this.y, this.w, this.h, 8);
-    ctx.fill();
+    g.addColorStop(0, this.color + 'dd'); g.addColorStop(1, '#000');
+    ctx.fillStyle = g; ctx.shadowColor = this.color; ctx.shadowBlur = 28 * p;
+    this._rr(ctx, this.x, this.y, this.w, this.h, 8); ctx.fill();
 
     ctx.strokeStyle = this.color; ctx.lineWidth = 3;
     this._rr(ctx, this.x, this.y, this.w, this.h, 8); ctx.stroke();
 
-    ctx.shadowBlur = 10; ctx.shadowColor = this.color;
-    ctx.fillStyle = '#fff';
+    ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fillStyle = '#fff';
     ctx.font = `900 ${Math.max(10, this.w/10)}px Orbitron, monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(this.name, this.x + this.w/2, this.y + this.h/2);
 
     this.projectiles.forEach(pr => {
-      ctx.save();
-      ctx.shadowColor = pr.color; ctx.shadowBlur = 14;
-      ctx.fillStyle = pr.color;
-      ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.r, 0, Math.PI*2); ctx.fill();
-      ctx.restore();
+      ctx.save(); ctx.shadowColor = pr.color; ctx.shadowBlur = 14; ctx.fillStyle = pr.color;
+      ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.r, 0, Math.PI*2); ctx.fill(); ctx.restore();
     });
     ctx.restore();
   }
@@ -1052,9 +862,9 @@ class Boss {
 class PowerUp {
   constructor(x, y, type) {
     this.x = x; this.y = y; this.type = type;
-    this.info = PU[type];
+    this.info = PU[type] || { label: type, color: '#00f5ff', dur: 10 };
     this.vy = 120; this.bt = Math.random() * Math.PI * 2;
-    this.w = 72; this.h = 22; this.alive = true;
+    this.w = 78; this.h = 24; this.alive = true;
   }
   update(dt) { this.y += this.vy * dt; this.bt += dt * 4; }
   render(ctx) {
@@ -1083,7 +893,7 @@ class PowerUp {
 
 class Laser {
   constructor(x, y, color = '#ff3366') {
-    this.x = x; this.y = y; this.vy = -620; this.alive = true; this.color = color;
+    this.x = x; this.y = y; this.vy = -640; this.alive = true; this.color = color;
   }
   update(dt) { this.y += this.vy * dt; if (this.y < -20) this.alive = false; }
   render(ctx) {
@@ -1112,17 +922,16 @@ class BrickBreaker {
     this.shake = new Shake();
     this.bg    = new BgRenderer(this.bgC);
 
-    // Novelty State
+    // Hero Avatar State
     this.hero = HEROES['CYBER_SAMURAI'];
-    this.relics = []; // List of drafted relic IDs
-    this.ultCharge = 0; // 0 to 100
+    this.activeHeroMorph = null; // Mid-game hero morph
+    this.relics = [];
+    this.ultCharge = 0;
     this.isUltActive = false;
     this.ultTimer = 0;
-    this.ballHistory = []; // History buffer for Chrono Rewind
 
-    // Superhot Bullet Time
+    // Bullet Time
     this.paddleLastX = 0;
-    this.paddleSpeed = 0;
     this.timeScale = 1.0;
 
     // Anomalies
@@ -1137,9 +946,7 @@ class BrickBreaker {
     this.lives = 3;
     this.combo = 0;
     this.bestCombo = 0;
-    this.time  = 0;
-    this.levelTime = 0;
-    this.startLives = 3;
+    this.time  = 0; this.levelTime = 0; this.startLives = 3;
 
     // Entities
     this.ball = null; this.paddle = null;
@@ -1150,7 +957,6 @@ class BrickBreaker {
     this.gemHits = 0;
     this.laserCD = 0; this.stormT = 0;
 
-    // Dimensions & Input
     this.AW = 720; this.AH = 640;
     this.mx = 0; this.my = 0; this.keys = {};
     this.prv = null; this._lastT = 0;
@@ -1222,7 +1028,7 @@ class BrickBreaker {
         e.preventDefault();
         if (this.state === 'playing') {
           if (this.ball?.stuck) this._launch();
-          else if (this.aPU['LASER'] || this.aPU['STORM']) this._fireLaser();
+          else if (this.aPU['LASER'] || this.aPU['STORM'] || this.aPU['HERO_SAMURAI']) this._fireLaser();
         } else if (this.state === 'start') {
           this._startGame();
         } else if (this.state === 'paused') {
@@ -1271,25 +1077,51 @@ class BrickBreaker {
     on('btn-draft-relic',  () => this._showRelicDraft());
     on('btn-ult',          () => this._activateHeroUlt());
 
-    // Hero selection clicks
-    document.querySelectorAll('.hero-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const hKey = card.getAttribute('data-hero');
-        if (HEROES[hKey]) {
-          this.hero = HEROES[hKey];
-          document.querySelectorAll('.hero-card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
-          this._updateHeroDisplay();
-          this._setState('start');
-        }
+    // Explicit reliable Hero Selection click handler
+    const heroKeys = ['CYBER_SAMURAI', 'CHRONO_MAGE', 'SIEGE_MECH'];
+    heroKeys.forEach(hKey => {
+      const card = document.getElementById(`card-${hKey}`);
+      if (card) {
+        card.addEventListener('click', () => this._selectHero(hKey));
+      }
+    });
+
+    document.querySelectorAll('.btn-select-hero').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const target = btn.getAttribute('data-target');
+        if (target) this._selectHero(target);
       });
     });
+  }
+
+  _selectHero(hKey) {
+    if (!HEROES[hKey]) return;
+    this.hero = HEROES[hKey];
+    this.audio.play('morph');
+
+    // Update Card UI
+    document.querySelectorAll('.hero-card').forEach(c => {
+      const isCurrent = c.getAttribute('data-hero') === hKey;
+      c.classList.toggle('selected', isCurrent);
+      const btn = c.querySelector('.btn-select-hero');
+      if (btn) {
+        btn.textContent = isCurrent ? 'SELECTED' : 'SELECT';
+      }
+    });
+
+    this._updateHeroDisplay();
   }
 
   _showHeroSelect() { this._setState('hero-select'); }
 
   _updateHeroDisplay() {
     this._set('start-hero-name', this.hero.name);
+    const badgeName = document.getElementById('hud-hero-name-badge');
+    const badgeIcon = document.getElementById('hud-hero-icon');
+    const curr = this.activeHeroMorph || this.hero;
+    if (badgeName) badgeName.textContent = curr.name.replace('CYBER ', '').replace('HERO ', '');
+    if (badgeIcon) badgeIcon.textContent = curr.icon || '🛡️';
   }
 
   // ── HERO ULTIMATE SYSTEM ──────────────────────────────────────
@@ -1322,24 +1154,25 @@ class BrickBreaker {
     const fill = document.getElementById('hud-ult-fill');
     if (fill) fill.style.width = '0%';
 
-    // Hero specific ultimate logic
-    if (this.hero.id === 'CHRONO_MAGE') {
-      // Recall ball back to paddle safely
+    const currentHero = this.activeHeroMorph || this.hero;
+
+    if (currentHero.id === 'CHRONO_MAGE') {
       if (this.ball) {
         this.ball.x = this.paddle.x + this.paddle.w/2;
         this.ball.y = this.paddle.y - CFG.BALL_R - 3;
         this.ball.vx = 0; this.ball.vy = 0; this.ball.stuck = true;
       }
-      this.ps.addText(this.AW/2, this.AH/2, 'CHRONO REWIND!', '#00f5ff', 30);
+      this.aPU['BULLET_TIME'] = true;
+      this.puT['BULLET_TIME'] = 8;
+      this.ps.addText(this.AW/2, this.AH/2, 'CHRONO TIME-STOP!', '#00f5ff', 30);
       this.isUltActive = false;
-    } else if (this.hero.id === 'CYBER_SAMURAI') {
-      // 3 Massive vertical energy slices
+    } else if (currentHero.id === 'CYBER_SAMURAI') {
       const xs = [this.paddle.x, this.paddle.x + this.paddle.w/2, this.paddle.x + this.paddle.w];
       xs.forEach(x => {
         this.flashes.push(new Flash(x, this.AH/2, '#ff00ff'));
         this.bricks.forEach(b => {
           if (!b.alive) return;
-          if (Math.abs((b.x + b.w/2) - x) < 36) {
+          if (Math.abs((b.x + b.w/2) - x) < 38) {
             b.hp = 0; b.alive = false;
             this.ps.burst(b.x, b.y, b.w, b.h, '#ff00ff');
             this._addScore(b.score);
@@ -1350,8 +1183,7 @@ class BrickBreaker {
       this.ps.addText(this.AW/2, this.AH/2, 'DIMENSIONAL SLASH!', '#ff00ff', 30);
       this._checkWin();
       this.isUltActive = false;
-    } else if (this.hero.id === 'SIEGE_MECH') {
-      // Hyper Cannon laser beam for 3.5s
+    } else if (currentHero.id === 'SIEGE_MECH') {
       this.ultTimer = 3.5;
       this.ps.addText(this.AW/2, this.AH/2, 'HYPER CANNON!', '#ffd700', 30);
     }
@@ -1364,7 +1196,6 @@ class BrickBreaker {
     if (!container) return;
     container.innerHTML = '';
 
-    // Pick 3 random available relics
     const unowned = RELICS.filter(r => !this.relics.includes(r.id));
     const pool = unowned.length >= 3 ? unowned : RELICS;
     const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -1414,16 +1245,13 @@ class BrickBreaker {
   // ── GAME FLOW ────────────────────────────────────────────────
   _startGame() {
     this._resize();
-    this.score = 0;
-    this.combo = 0;
-    this.bestCombo = 0;
-    this.lives = 3;
-    this.startLives = 3;
+    this.score = 0; this.combo = 0; this.bestCombo = 0;
+    this.lives = 3; this.startLives = 3;
     this.aPU = {}; this.puT = {};
-    this.gemHits = 0;
-    this.time = 0; this.levelTime = 0;
+    this.gemHits = 0; this.time = 0; this.levelTime = 0;
     this.laserCD = 0; this.stormT = 0;
     this.ultCharge = 0; this.isUltActive = false;
+    this.activeHeroMorph = null;
     this.extras = []; this.pups = [];
     this.lasers = []; this.flashes = [];
     this.boss = null;
@@ -1442,11 +1270,13 @@ class BrickBreaker {
     this._updatePUDisplay();
     this._updateBossBar();
     this._updateRelicsBar();
+    this._updateHeroDisplay();
   }
 
   _initPaddle() {
     let pw = CFG.PADDLE_W;
-    if (this.hero.id === 'SIEGE_MECH') pw *= 1.2; // Passive: 20% wider
+    const cur = this.activeHeroMorph || this.hero;
+    if (cur.id === 'SIEGE_MECH') pw *= 1.2;
     this.paddle = { x: this.AW/2 - pw/2, y: this.AH - 38, w: pw, h: CFG.PADDLE_H };
   }
 
@@ -1491,7 +1321,6 @@ class BrickBreaker {
       const bossW = Math.min(this.AW * 0.6, 320);
       const maxHp = 15 + this.level * 3;
       this.boss = new Boss(this.AW/2 - bossW/2, CFG.BRICK_TOP, bossW, 48, world, maxHp);
-      // Aegis barrier relic hook
       if (this.relics.includes('AEGIS_BARRIER')) {
         this.aPU['SHIELD'] = true;
         this.puT['SHIELD'] = 20;
@@ -1502,11 +1331,9 @@ class BrickBreaker {
   _buildAnomalies() {
     this.wells = [];
     this.portals = null;
-    // Gravity Wells on world 2+ (Level 4+)
     if (this.level >= 4 && !isBossLevel(this.level)) {
       this.wells.push(new GravityWell(this.AW * 0.5, this.AH * 0.45));
     }
-    // Portals on world 3+ (Level 7+)
     if (this.level >= 7) {
       this.portals = new PortalPair(this.AW * 0.18, this.AH * 0.55, this.AW * 0.82, this.AH * 0.55);
     }
@@ -1525,7 +1352,8 @@ class BrickBreaker {
   _fireLaser() {
     if (this.laserCD > 0) return;
     this.laserCD = 0.18;
-    const color = this.aPU['STORM'] ? '#ffe600' : '#ff3366';
+    const isSamurai = (this.activeHeroMorph?.id === 'CYBER_SAMURAI' || this.hero.id === 'CYBER_SAMURAI');
+    const color = isSamurai ? '#ff00ff' : (this.aPU['STORM'] ? '#ffe600' : '#ff3366');
     this.lasers.push(new Laser(this.paddle.x + 10, this.paddle.y, color));
     this.lasers.push(new Laser(this.paddle.x + this.paddle.w - 10, this.paddle.y, color));
     this.audio.play('laser');
@@ -1598,7 +1426,6 @@ class BrickBreaker {
       this._set('vic-time',  Math.round(this.levelTime) + 's');
       this._renderStars('vic-stars', stars);
       this._saveLevelProgress(this.level, stars);
-      this._checkAchievements();
     }
   }
 
@@ -1635,36 +1462,6 @@ class BrickBreaker {
     const maxKey = 'bb_max_level';
     const curMax = parseInt(localStorage.getItem(maxKey) || '1');
     if (level + 1 > curMax) localStorage.setItem(maxKey, level + 1);
-  }
-
-  _checkAchievements() {
-    const unlocked = JSON.parse(localStorage.getItem('bb_achievements') || '[]');
-    const check = (id, condition) => {
-      if (condition && !unlocked.includes(id)) {
-        unlocked.push(id);
-        localStorage.setItem('bb_achievements', JSON.stringify(unlocked));
-        setTimeout(() => this._showAchievement(ACHIEVEMENTS[id]), 800);
-      }
-    };
-    check('FIRST_COMBO',   this.bestCombo >= 5);
-    check('NO_DAMAGE',     this.lives === this.startLives);
-    check('SPEED_RUN',     this.levelTime < 30);
-    check('BOSS_SLAYER',   isBossLevel(this.level) && !this.boss?.alive);
-    check('POWER_HOARDER', Object.keys(this.aPU).length >= 3);
-    check('RELIC_MASTER',  this.relics.length >= 4);
-  }
-
-  _showAchievement(ach) {
-    if (!ach) return;
-    this.audio.play('achievement');
-    const toast = document.getElementById('achievement-toast');
-    const name  = document.getElementById('ach-name-text');
-    if (!toast || !name) return;
-    const icon = toast.querySelector('.ach-icon');
-    if (icon) icon.textContent = ach.icon;
-    name.textContent = ach.name;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3200);
   }
 
   _buildLevelSelect() {
@@ -1709,6 +1506,7 @@ class BrickBreaker {
     });
   }
 
+  // ── IN-GAME POWER-UPS & MORPHS ────────────────────────────────
   _applyPU(type) {
     if (type === 'MULTIBALL') {
       for (let i = 0; i < 2; i++) {
@@ -1725,8 +1523,27 @@ class BrickBreaker {
       return;
     }
     if (type === 'GEMSTONE') this.gemHits = 5;
+
+    // Hero Morph Power-up Drops!
+    if (type === 'HERO_SAMURAI') {
+      this.activeHeroMorph = HEROES['CYBER_SAMURAI'];
+      this.audio.play('morph');
+      this._updateHeroDisplay();
+    } else if (type === 'HERO_MECH') {
+      this.activeHeroMorph = HEROES['SIEGE_MECH'];
+      this.paddle.w = CFG.PADDLE_W * 1.25;
+      this.audio.play('morph');
+      this._updateHeroDisplay();
+    } else if (type === 'HERO_CHRONO') {
+      this.activeHeroMorph = HEROES['CHRONO_MAGE'];
+      this.aPU['BULLET_TIME'] = true;
+      this.puT['BULLET_TIME'] = 12;
+      this.audio.play('morph');
+      this._updateHeroDisplay();
+    }
+
     this.aPU[type] = true;
-    if (PU[type].dur) this.puT[type] = PU[type].dur;
+    if (PU[type]?.dur) this.puT[type] = PU[type].dur;
     if (type === 'BIGPADDLE') this.paddle.w = Math.min(220, this.AW*0.35);
     this._updatePUDisplay();
   }
@@ -1734,7 +1551,12 @@ class BrickBreaker {
   _removePU(type) {
     delete this.aPU[type]; delete this.puT[type];
     if (type === 'BIGPADDLE' && this.paddle) {
-      this.paddle.w = this.hero.id === 'SIEGE_MECH' ? CFG.PADDLE_W * 1.2 : CFG.PADDLE_W;
+      const cur = this.activeHeroMorph || this.hero;
+      this.paddle.w = cur.id === 'SIEGE_MECH' ? CFG.PADDLE_W * 1.2 : CFG.PADDLE_W;
+    }
+    if (type === 'HERO_SAMURAI' || type === 'HERO_MECH' || type === 'HERO_CHRONO') {
+      this.activeHeroMorph = null;
+      this._updateHeroDisplay();
     }
     this._updatePUDisplay();
   }
@@ -1745,6 +1567,7 @@ class BrickBreaker {
     d.innerHTML = '';
     Object.keys(this.aPU).forEach(t => {
       const info = PU[t];
+      if (!info) return;
       const el = document.createElement('div');
       el.className = 'powerup-pill';
       el.style.cssText = `border-color:${info.color};color:${info.color};`;
@@ -1779,9 +1602,6 @@ class BrickBreaker {
         d.classList.toggle('active', i < this.lives);
       });
     }
-    // Bullet-time fill indicator
-    const btFill = document.getElementById('bt-fill');
-    if (btFill) btFill.style.width = Math.round(this.timeScale * 100) + '%';
   }
 
   _comboMult() {
@@ -1801,7 +1621,7 @@ class BrickBreaker {
       this.best = this.score;
       localStorage.setItem('bb_best', this.best);
     }
-    this._addUltCharge(2.5); // Add charge on brick break
+    this._addUltCharge(2.5);
     if (this.gemHits > 0) { this.gemHits--; this._updatePUDisplay(); }
     return pts;
   }
@@ -1813,7 +1633,6 @@ class BrickBreaker {
       this.audio.play('combo');
       this._showCombo();
     }
-    // Relic hook: OVERCHARGE (every 10-combo fires shockwave)
     if (this.relics.includes('OVERCHARGE') && this.combo % 10 === 0) {
       this.audio.play('lightning');
       this.shake.add(0.4);
@@ -1854,15 +1673,15 @@ class BrickBreaker {
     this._lastT = t;
     this.time += rawDt;
 
-    // "SUPERHOT" Time Dilation Calculation
-    if (this.paddle && this.state === 'playing') {
+    // Bullet-Time active ONLY when BULLET_TIME powerup is collected or Chrono Mage is active!
+    const bulletTimeActive = this.aPU['BULLET_TIME'] || (this.hero.id === 'CHRONO_MAGE' && !this.ball?.stuck);
+    if (bulletTimeActive && this.paddle && this.state === 'playing') {
       const pSpeed = Math.abs(this.paddle.x - this.paddleLastX) / Math.max(rawDt, 0.001);
       this.paddleLastX = this.paddle.x;
-      const minScale = this.hero.id === 'CHRONO_MAGE' ? 0.05 : 0.10;
-      const targetScale = Math.min(1.0, Math.max(minScale, (pSpeed / 350)));
+      const targetScale = Math.min(1.0, Math.max(0.12, (pSpeed / 320)));
       this.timeScale += (targetScale - this.timeScale) * 0.25;
     } else {
-      this.timeScale = 1.0;
+      this.timeScale = 1.0; // 100% normal smooth arcade speed
     }
 
     const dt = rawDt * this.timeScale;
@@ -1885,8 +1704,7 @@ class BrickBreaker {
     this.shake.update(rawDt);
     this.laserCD = Math.max(0, this.laserCD - sdt);
 
-    // Hero Ult Timer (Siege Mech Cannon)
-    if (this.isUltActive && this.hero.id === 'SIEGE_MECH') {
+    if (this.isUltActive && (this.activeHeroMorph?.id === 'SIEGE_MECH' || this.hero.id === 'SIEGE_MECH')) {
       this.ultTimer -= rawDt;
       this.shake.add(0.2);
       this.bricks.forEach(b => {
@@ -1916,7 +1734,8 @@ class BrickBreaker {
     }
 
     // Keyboard paddle
-    const pSpeed = this.hero.id === 'CYBER_SAMURAI' ? 700 : 560;
+    const cur = this.activeHeroMorph || this.hero;
+    const pSpeed = cur.id === 'CYBER_SAMURAI' ? 700 : 560;
     if (this.keys['ArrowLeft']  || this.keys['KeyA']) this.paddle.x -= pSpeed * rawDt;
     if (this.keys['ArrowRight'] || this.keys['KeyD']) this.paddle.x += pSpeed * rawDt;
     this._clampP();
@@ -1931,12 +1750,10 @@ class BrickBreaker {
       if (this.ball && !this.ball.stuck) this.portals.warp(this.ball, this.audio, this.ps);
     }
 
-    // Relic Singularity Pull
     if (this.relics.includes('SINGULARITY') && this.ball && !this.ball.stuck) {
       this.ps.debris.forEach(d => {
         const dx = this.ball.x - d.x, dy = this.ball.y - d.y;
-        d.vx += (dx / 40) * sdt;
-        d.vy += (dy / 40) * sdt;
+        d.vx += (dx / 40) * sdt; d.vy += (dy / 40) * sdt;
       });
     }
 
@@ -1969,7 +1786,7 @@ class BrickBreaker {
       if (p.y > this.AH + 30) return false;
       if (this._rectOverlap(p.bounds, { x: this.paddle.x, y: this.paddle.y, w: this.paddle.w, h: this.paddle.h })) {
         this._applyPU(p.type);
-        this.ps.addText(p.x, p.y, PU[p.type].label, PU[p.type].color, 20);
+        this.ps.addText(p.x, p.y, p.info.label, p.info.color, 20);
         this.audio.play('powerup');
         return false;
       }
@@ -1994,7 +1811,6 @@ class BrickBreaker {
       this._checkWin();
     }
 
-    // Flashes & Bricks & Particles
     this.flashes.forEach(f => f.update(rawDt));
     this.flashes = this.flashes.filter(f => f.alive());
     this.bricks.forEach(b => b.update(rawDt));
@@ -2010,12 +1826,10 @@ class BrickBreaker {
 
     const grav = this.aPU['GRAVITY'] ? -1 : 1;
 
-    // Walls
     if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); this.audio.play('bounce'); }
     if (ball.x + ball.r > this.AW) { ball.x = this.AW - ball.r; ball.vx = -Math.abs(ball.vx); this.audio.play('bounce'); }
     if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); this.audio.play('bounce'); }
 
-    // Floor / Shield
     if (ball.y - ball.r > this.AH) {
       if (this.aPU['SHIELD']) {
         ball.vy = -Math.abs(ball.vy); ball.y = this.AH - ball.r;
@@ -2025,7 +1839,6 @@ class BrickBreaker {
       }
     }
 
-    // Paddle Deflection
     const paddleR = { x: this.paddle.x, y: this.paddle.y, w: this.paddle.w, h: this.paddle.h };
     if (ball.vy * grav > 0 && this._circleRect(ball, paddleR)) {
       const hit = (ball.x - this.paddle.x) / this.paddle.w - 0.5;
@@ -2037,12 +1850,11 @@ class BrickBreaker {
       this.audio.play('bounce');
       this.flashes.push(new Flash(ball.x, this.paddle.y, getWorldForLevel(this.level).accent));
       this.combo = 0;
-      this._addUltCharge(1.5); // Add charge on paddle bounce
+      this._addUltCharge(1.5);
     }
 
     this._ballBricks(ball);
 
-    // Ball vs Boss
     if (this.boss && this.boss.alive && !this.boss.entering) {
       if (this._circleRect(ball, { x: this.boss.x, y: this.boss.y, w: this.boss.w, h: this.boss.h })) {
         ball.vy = -ball.vy;
@@ -2073,7 +1885,7 @@ class BrickBreaker {
         if (Math.abs(ox) < Math.abs(oy)) ball.vx = -ball.vx;
         else ball.vy = -ball.vy;
       } else if (b.indestructible && phaseShift) {
-        b.indestructible = false; // Phase shift damages metal bricks
+        b.indestructible = false;
       }
 
       const destroyed = fireball ? (() => { b.hp = 0; b.alive = false; return true; })() : b.hit();
@@ -2081,7 +1893,6 @@ class BrickBreaker {
       this.flashes.push(new Flash(cx, cy, b.color));
       if (!b.indestructible) this.audio.play(fireball ? 'fireball' : 'break');
 
-      // Relic: TESLA COIL chain lightning
       if (this.relics.includes('TESLA_ARC')) {
         let chainCount = 0;
         this.bricks.forEach(nb => {
@@ -2098,15 +1909,12 @@ class BrickBreaker {
 
       if (destroyed) {
         this.ps.burst(b.x, b.y, b.w, b.h, b.color);
-        // Physics debris drop for heavy/armored bricks
         if (b.type === 'ARMORED' || b.type === 'TOUGH') {
           this.ps.addDebris(b.x, b.y, b.w/2, b.h/2, b.color);
         }
-        // Relic: CLUSTER BOMB
         if (this.relics.includes('CLUSTER_BOMB')) {
           this.ps.emit(cx, cy, '#ff2244', 3, { speed: 200, type: 'shard' });
         }
-        // Relic: HOMING MISSILES
         if (this.relics.includes('HOMING_MISSILES')) {
           this.lasers.push(new Laser(this.paddle.x, this.paddle.y, '#00ff88'));
           this.lasers.push(new Laser(this.paddle.x + this.paddle.w, this.paddle.y, '#00ff88'));
@@ -2120,7 +1928,7 @@ class BrickBreaker {
         if (b.type === 'EXPLOSIVE') { this.audio.play('explode'); this._explode(b); }
 
         const dropPU = b.type === 'POWERUP' ? b.puType
-          : (Math.random() < 0.09 ? Object.keys(PU)[Math.floor(Math.random() * Object.keys(PU).length)] : null);
+          : (Math.random() < 0.11 ? Object.keys(PU)[Math.floor(Math.random() * Object.keys(PU).length)] : null);
         if (dropPU) this.pups.push(new PowerUp(cx, cy, dropPU));
 
         this._checkWin();
@@ -2220,7 +2028,7 @@ class BrickBreaker {
     this.flashes.forEach(f => f.render(ctx));
 
     // Hyper Cannon Beam Rendering
-    if (this.isUltActive && this.hero.id === 'SIEGE_MECH') {
+    if (this.isUltActive && (this.activeHeroMorph?.id === 'SIEGE_MECH' || this.hero.id === 'SIEGE_MECH')) {
       ctx.save();
       const px = this.paddle.x + this.paddle.w/2;
       ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 40;
@@ -2239,7 +2047,7 @@ class BrickBreaker {
     if (this.ball) this._drawBall(ctx, this.ball, world.accent, this.aPU['FIREBALL']);
     this.extras.forEach(b => this._drawBall(ctx, b, world.accent2 || '#ff44cc', false));
 
-    // Paddle & Shield
+    // Paddle
     this._drawPaddle(ctx, world);
 
     if (this.aPU['SHIELD']) {
@@ -2280,9 +2088,11 @@ class BrickBreaker {
 
   _drawPaddle(ctx, world) {
     const p = this.paddle; if (!p) return;
-    const isLaser = this.aPU['LASER'] || this.aPU['STORM'];
-    const col = isLaser ? '#ff3366' : this.hero.color || world.accent;
+    const cur = this.activeHeroMorph || this.hero;
+    const isLaser = this.aPU['LASER'] || this.aPU['STORM'] || cur.id === 'CYBER_SAMURAI';
+    const col = isLaser ? (cur.id === 'CYBER_SAMURAI' ? '#ff00ff' : '#ff3366') : cur.color || world.accent;
     const r = p.h / 2;
+
     ctx.save();
     ctx.shadowColor = col; ctx.shadowBlur = 24;
     const g = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
@@ -2299,6 +2109,13 @@ class BrickBreaker {
     ctx.lineTo(p.x+p.w-r, p.y);
     ctx.arc(p.x+p.w-r, p.y+r, r, Math.PI*1.5, Math.PI/2);
     ctx.closePath(); ctx.stroke();
+
+    // Dual Blade energy wings on Samurai
+    if (cur.id === 'CYBER_SAMURAI') {
+      ctx.fillStyle = '#ff00ff'; ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 14;
+      ctx.fillRect(p.x - 8, p.y + 2, 8, 12);
+      ctx.fillRect(p.x + p.w, p.y + 2, 8, 12);
+    }
     ctx.restore();
   }
 
