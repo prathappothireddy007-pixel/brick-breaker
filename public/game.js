@@ -1024,11 +1024,38 @@ class BrickBreaker {
 
   _bindInput() {
     window.addEventListener('resize', () => this._resize());
+    
+    const customCursor = document.getElementById('custom-cursor');
+    const cursorGlow = document.getElementById('cursor-glow');
+
     window.addEventListener('mousemove', e => {
       this.mx = e.clientX; this.my = e.clientY;
       this.bg.update(0, this.mx, this.my);
-      const cg = document.getElementById('cursor-glow');
-      if (cg) { cg.style.left = e.clientX + 'px'; cg.style.top = e.clientY + 'px'; }
+
+      if (customCursor) {
+        customCursor.style.left = e.clientX + 'px';
+        customCursor.style.top = e.clientY + 'px';
+      }
+      if (cursorGlow) {
+        cursorGlow.style.left = e.clientX + 'px';
+        cursorGlow.style.top = e.clientY + 'px';
+      }
+
+      // Check if hovering over interactive element
+      const target = e.target;
+      const isInteractive = target && (
+        target.tagName === 'BUTTON' ||
+        target.classList.contains('hero-card') ||
+        target.classList.contains('relic-card') ||
+        target.classList.contains('lc-card') ||
+        target.classList.contains('editor-cell') ||
+        target.classList.contains('btn-palette') ||
+        target.closest('button') ||
+        target.closest('.hero-card') ||
+        target.closest('.relic-card')
+      );
+      document.body.classList.toggle('cursor-hover', !!isInteractive);
+
       if (this.state === 'playing' && this.paddle) {
         const rect = this.gC.getBoundingClientRect();
         this.paddle.x = e.clientX - rect.left - this.paddle.w/2;
