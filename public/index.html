@@ -65,7 +65,7 @@
                 </div>
 
                 <div class="controls-hint">
-                    <span>← MOUSE / TOUCH → MOVE &bull; COLLECT HERO & TIME-STOP POWER-UPS &bull; SPACE TO LAUNCH</span>
+                    <span>← MOUSE / TOUCH → MOVE &bull; COLLECT POWER-UPS &bull; [E] ULTIMATE &bull; SPACE TO LAUNCH</span>
                 </div>
                 <div class="start-footer">
                     <span>BEST SCORE: </span>
@@ -87,19 +87,6 @@
                 <h2 class="modal-title">CHOOSE STARTER HERO</h2>
                 <div class="modal-sep"></div>
                 <div class="heroes-grid" id="heroes-grid">
-                    <!-- Chrono Mage Card -->
-                    <div class="hero-card" id="card-CHRONO_MAGE" data-hero="CHRONO_MAGE">
-                        <div class="hero-icon">⏳</div>
-                        <div class="hero-name">CHRONO MAGE</div>
-                        <div class="hero-passive">Starts with Time-Stop & Rewind</div>
-                        <div class="hero-ult">
-                            <span class="ult-tag">ACTIVE ABILITY</span>
-                            <span class="ult-name">CHRONO TIME-STOP</span>
-                            <p class="ult-desc">Freezes / slows time when you pause moving & grants emergency ball rewinds.</p>
-                        </div>
-                        <button class="btn-primary btn-select-hero" data-target="CHRONO_MAGE">SELECT</button>
-                    </div>
-
                     <!-- Cyber Samurai Card -->
                     <div class="hero-card selected" id="card-CYBER_SAMURAI" data-hero="CYBER_SAMURAI">
                         <div class="hero-icon">⚔️</div>
@@ -111,6 +98,19 @@
                             <p class="ult-desc">Dual neon blades cut through falling debris and launch vertical energy waves.</p>
                         </div>
                         <button class="btn-primary btn-select-hero" data-target="CYBER_SAMURAI">SELECTED</button>
+                    </div>
+
+                    <!-- Chrono Mage Card -->
+                    <div class="hero-card" id="card-CHRONO_MAGE" data-hero="CHRONO_MAGE">
+                        <div class="hero-icon">⏳</div>
+                        <div class="hero-name">CHRONO MAGE</div>
+                        <div class="hero-passive">Safe Ball Rewind on Ultimate</div>
+                        <div class="hero-ult">
+                            <span class="ult-tag">ACTIVE ABILITY</span>
+                            <span class="ult-name">CHRONO REWIND</span>
+                            <p class="ult-desc">Teleports ball back safely to your paddle with emergency safety shield.</p>
+                        </div>
+                        <button class="btn-primary btn-select-hero" data-target="CHRONO_MAGE">SELECT</button>
                     </div>
 
                     <!-- Siege Mech Card -->
@@ -140,7 +140,7 @@
                 </div>
                 <div class="modal-sep"></div>
                 <div class="relic-cards-container" id="relic-cards-container">
-                    <!-- 3 Generated Relic Cards will be inserted here -->
+                    <!-- 3 Generated Relic Cards -->
                 </div>
             </div>
         </section>
@@ -170,7 +170,6 @@
                         <div class="hud-label">COMBO</div>
                         <div class="hud-val" id="hud-combo">&times;1</div>
                     </div>
-                    <!-- Hero Active Badge in HUD -->
                     <div class="hud-hero-indicator" id="hud-hero-indicator">
                         <span id="hud-hero-icon">⚔️</span>
                         <span id="hud-hero-name-badge">SAMURAI</span>
