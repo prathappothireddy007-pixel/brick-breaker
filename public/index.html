@@ -44,7 +44,7 @@
                         <span class="logo-line">BRICK</span>
                         <span class="logo-line accent">BREAKER</span>
                     </h1>
-                    <p class="tagline">ROGUELIKE &bull; BULLET-TIME &bull; BREAKOUT</p>
+                    <p class="tagline">ROGUELIKE &bull; HERO MORPHS &bull; BREAKOUT</p>
                 </div>
 
                 <div class="start-buttons">
@@ -52,7 +52,7 @@
                         <span class="btn-label">▶ START RUN</span>
                     </button>
                     <button id="btn-hero-select" class="btn-secondary">
-                        <span class="btn-label">🛡️ SELECT HERO CLASS</span>
+                        <span class="btn-label">🛡️ STARTER HERO CLASS</span>
                     </button>
                     <button id="btn-level-select" class="btn-secondary">
                         <span class="btn-label">☰ CAMPAIGN MAP</span>
@@ -60,12 +60,12 @@
                 </div>
 
                 <div class="current-hero-badge" id="start-hero-badge">
-                    <span class="ch-lbl">HERO:</span>
+                    <span class="ch-lbl">STARTER HERO:</span>
                     <span class="ch-name" id="start-hero-name">CYBER SAMURAI</span>
                 </div>
 
                 <div class="controls-hint">
-                    <span>← MOUSE / TOUCH → MOVE &bull; STOP TO BULLET-TIME &bull; [E] ULTIMATE &bull; SPACE LAUNCH</span>
+                    <span>← MOUSE / TOUCH → MOVE &bull; COLLECT HERO & TIME-STOP POWER-UPS &bull; SPACE TO LAUNCH</span>
                 </div>
                 <div class="start-footer">
                     <span>BEST SCORE: </span>
@@ -84,49 +84,49 @@
         <section id="screen-hero-select" class="screen overlay-screen">
             <div class="modal-backdrop"></div>
             <div class="modal-panel hero-select-panel">
-                <h2 class="modal-title">CHOOSE HERO CLASS</h2>
+                <h2 class="modal-title">CHOOSE STARTER HERO</h2>
                 <div class="modal-sep"></div>
                 <div class="heroes-grid" id="heroes-grid">
                     <!-- Chrono Mage Card -->
-                    <div class="hero-card" data-hero="CHRONO_MAGE">
+                    <div class="hero-card" id="card-CHRONO_MAGE" data-hero="CHRONO_MAGE">
                         <div class="hero-icon">⏳</div>
                         <div class="hero-name">CHRONO MAGE</div>
-                        <div class="hero-passive">Passive: +15% Deeper Bullet-Time</div>
+                        <div class="hero-passive">Starts with Time-Stop & Rewind</div>
                         <div class="hero-ult">
-                            <span class="ult-tag">[E] ULTIMATE</span>
-                            <span class="ult-name">CHRONO REWIND</span>
-                            <p class="ult-desc">Rewinds ball 2.5s into the past & teleports back to paddle.</p>
+                            <span class="ult-tag">ACTIVE ABILITY</span>
+                            <span class="ult-name">CHRONO TIME-STOP</span>
+                            <p class="ult-desc">Freezes / slows time when you pause moving & grants emergency ball rewinds.</p>
                         </div>
-                        <button class="btn-primary btn-select-hero">SELECT</button>
+                        <button class="btn-primary btn-select-hero" data-target="CHRONO_MAGE">SELECT</button>
                     </div>
 
                     <!-- Cyber Samurai Card -->
-                    <div class="hero-card selected" data-hero="CYBER_SAMURAI">
+                    <div class="hero-card selected" id="card-CYBER_SAMURAI" data-hero="CYBER_SAMURAI">
                         <div class="hero-icon">⚔️</div>
                         <div class="hero-name">CYBER SAMURAI</div>
-                        <div class="hero-passive">Passive: +25% Speed & Slices Debris</div>
+                        <div class="hero-passive">+25% Speed & Slices Debris</div>
                         <div class="hero-ult">
-                            <span class="ult-tag">[E] ULTIMATE</span>
+                            <span class="ult-tag">ACTIVE ABILITY</span>
                             <span class="ult-name">DIMENSIONAL SLASH</span>
-                            <p class="ult-desc">Slices 3 vertical energy blades through entire brick columns.</p>
+                            <p class="ult-desc">Dual neon blades cut through falling debris and launch vertical energy waves.</p>
                         </div>
-                        <button class="btn-primary btn-select-hero">SELECTED</button>
+                        <button class="btn-primary btn-select-hero" data-target="CYBER_SAMURAI">SELECTED</button>
                     </div>
 
                     <!-- Siege Mech Card -->
-                    <div class="hero-card" data-hero="SIEGE_MECH">
+                    <div class="hero-card" id="card-SIEGE_MECH" data-hero="SIEGE_MECH">
                         <div class="hero-icon">🤖</div>
                         <div class="hero-name">SIEGE MECH</div>
-                        <div class="hero-passive">Passive: +20% Wider Heavy Paddle</div>
+                        <div class="hero-passive">+20% Wider Armored Paddle</div>
                         <div class="hero-ult">
-                            <span class="ult-tag">[E] ULTIMATE</span>
+                            <span class="ult-tag">ACTIVE ABILITY</span>
                             <span class="ult-name">HYPER CANNON</span>
-                            <p class="ult-desc">Fires a massive beam for 3.5s destroying everything in path.</p>
+                            <p class="ult-desc">Fires continuous high-energy laser beams destroying rows of bricks and boss HP.</p>
                         </div>
-                        <button class="btn-primary btn-select-hero">SELECT</button>
+                        <button class="btn-primary btn-select-hero" data-target="SIEGE_MECH">SELECT</button>
                     </div>
                 </div>
-                <button id="btn-hero-back" class="btn-ghost">BACK</button>
+                <button id="btn-hero-back" class="btn-ghost">CONFIRM & BACK</button>
             </div>
         </section>
 
@@ -170,9 +170,10 @@
                         <div class="hud-label">COMBO</div>
                         <div class="hud-val" id="hud-combo">&times;1</div>
                     </div>
-                    <div class="bullet-time-meter" id="bt-meter" title="Bullet Time Active">
-                        <span class="bt-icon">⏳</span>
-                        <div class="bt-bar"><div class="bt-fill" id="bt-fill"></div></div>
+                    <!-- Hero Active Badge in HUD -->
+                    <div class="hud-hero-indicator" id="hud-hero-indicator">
+                        <span id="hud-hero-icon">⚔️</span>
+                        <span id="hud-hero-name-badge">SAMURAI</span>
                     </div>
                 </div>
 
@@ -189,7 +190,7 @@
                 </div>
 
                 <div class="hud-panel hud-right">
-                    <!-- Hero Ultimate Meter & Button -->
+                    <!-- Hero Ultimate Button / Meter -->
                     <div class="ult-container">
                         <button id="btn-ult" class="btn-ult" disabled>
                             <span class="ult-btn-txt">[E] ULT</span>
