@@ -957,6 +957,14 @@ class BrickBreaker {
     this.mx = 0; this.my = 0; this.keys = {};
     this.prv = null; this._lastT = 0;
 
+    // Editor & Admin State
+    this.editorRows = 8;
+    this.editorCols = 12;
+    this.editorToken = 'S';
+    this.editorGrid = [];
+    this.customLevelGrid = null;
+    this.isPainting = false;
+
     this._init();
   }
 
@@ -967,6 +975,7 @@ class BrickBreaker {
     this._bindButtons();
     this._updateStartBest();
     this._buildLevelSelect();
+    this._initEditor();
     this._initDemo();
     this._updateHeroDisplay();
     requestAnimationFrame(t => this._loop(t));
@@ -1077,6 +1086,14 @@ class BrickBreaker {
     on('btn-hero-back',    () => this._setState('start'));
     on('btn-level-select', () => this._showLevelSelect());
     on('btn-ls-back',      () => this._setState('start'));
+    on('btn-admin-editor', () => this._showEditor());
+    on('btn-close-editor', () => this._setState('start'));
+    on('btn-play-custom-level', () => this._playCustomLevel());
+    on('btn-copy-lvl',     () => this._copyLvlConfig());
+    on('btn-editor-clear', () => this._clearEditorGrid());
+    on('btn-editor-random',() => this._randomizeEditorGrid());
+    on('btn-editor-preset-1', () => this._loadPreset('pyramid'));
+    on('btn-editor-preset-2', () => this._loadPreset('fortress'));
     on('btn-pause',        () => this._pause());
     on('btn-resume',       () => this._resume());
     on('btn-menu',         () => this._goMenu());
@@ -1299,6 +1316,34 @@ class BrickBreaker {
   }
 
   _buildBricks() {
+    if (this.customLevelGrid) {
+      const rows = this.customLevelGrid.length;
+      const cols = this.customLevelGrid[0].length;
+      const bW = (this.AW - CFG.BRICK_SIDE*2 - CFG.PAD*(cols-1)) / cols;
+      const bH = Math.min(24, (this.AH * 0.48 - CFG.BRICK_TOP - CFG.PAD*(rows-1)) / rows);
+      this.bricks = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const token = this.customLevelGrid[r][c];
+          if (token === '.') continue;
+          let type = 'NORMAL';
+          if (token === 'T') type = 'TOUGH';
+          else if (token === 'I') type = 'METAL';
+          else if (token === 'E') type = 'EXPLOSIVE';
+          else if (token === 'P') type = 'POWERUP';
+
+          const delay = r * 0.05;
+          const b = new Brick(CFG.BRICK_SIDE + c * (bW + CFG.PAD), CFG.BRICK_TOP + r * (bH + CFG.PAD), bW, bH, type, (r + c) % BRICK_COLORS.length, delay);
+          if (type === 'POWERUP') {
+            const keys = Object.keys(PU);
+            b.puType = keys[Math.floor(Math.random() * keys.length)];
+          }
+          this.bricks.push(b);
+        }
+      }
+      return;
+    }
+
     const rows = Math.min(4 + Math.floor(this.level * 0.7), 10);
     const cols = CFG.COLS;
     const bW = (this.AW - CFG.BRICK_SIDE*2 - CFG.PAD*(cols-1)) / cols;
@@ -1370,8 +1415,162 @@ class BrickBreaker {
 
   _pause()  { if (this.state === 'playing') this._setState('paused'); }
   _resume() { if (this.state === 'paused') { this._setState('playing'); this._lastT = performance.now(); } }
-  _goMenu() { this.extras = []; this.boss = null; this._setState('start'); this._updateStartBest(); }
+  _goMenu() { this.extras = []; this.boss = null; this.customLevelGrid = null; this._setState('start'); this._updateStartBest(); }
   _showLevelSelect() { this._buildLevelSelect(); this._setState('level-select'); }
+
+  // ── LEVEL EDITOR & ADMIN PANEL ──────────────────────────────
+  _initEditor() {
+    this.editorGrid = [];
+    for (let r = 0; r < this.editorRows; r++) {
+      this.editorGrid.push([]);
+      for (let c = 0; c < this.editorCols; c++) {
+        // Default pattern
+        const isBorder = (r === 0 || c === 0 || c === this.editorCols - 1);
+        this.editorGrid[r].push(r < 5 ? (isBorder ? 'T' : 'S') : '.');
+      }
+    }
+
+    // Palette button events
+    document.querySelectorAll('.btn-palette').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.audio.resume();
+        document.querySelectorAll('.btn-palette').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.editorToken = btn.getAttribute('data-token') || 'S';
+      });
+    });
+
+    // Track mouse down for drag-painting
+    window.addEventListener('mouseup', () => { this.isPainting = false; });
+  }
+
+  _showEditor() {
+    this._renderEditorGrid();
+    this._updateEditorUI();
+    this._setState('editor');
+  }
+
+  _renderEditorGrid() {
+    const gridEl = document.getElementById('editor-grid');
+    if (!gridEl) return;
+    gridEl.innerHTML = '';
+
+    for (let r = 0; r < this.editorRows; r++) {
+      for (let c = 0; c < this.editorCols; c++) {
+        const cell = document.createElement('div');
+        const token = this.editorGrid[r][c];
+        cell.className = `editor-cell ${token === '.' ? 'cell-empty' : 'cell-' + token}`;
+        cell.textContent = token === '.' ? '' : token;
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+
+        cell.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          this.isPainting = true;
+          this._paintEditorCell(r, c, cell);
+        });
+
+        cell.addEventListener('mouseenter', () => {
+          if (this.isPainting) {
+            this._paintEditorCell(r, c, cell);
+          }
+        });
+
+        gridEl.appendChild(cell);
+      }
+    }
+  }
+
+  _paintEditorCell(r, c, cellEl) {
+    this.editorGrid[r][c] = this.editorToken;
+    cellEl.className = `editor-cell ${this.editorToken === '.' ? 'cell-empty' : 'cell-' + this.editorToken}`;
+    cellEl.textContent = this.editorToken === '.' ? '' : this.editorToken;
+    this.audio.play('bounce');
+    this._updateEditorUI();
+  }
+
+  _updateEditorUI() {
+    let count = 0;
+    for (let r = 0; r < this.editorRows; r++) {
+      for (let c = 0; c < this.editorCols; c++) {
+        if (this.editorGrid[r][c] !== '.') count++;
+      }
+    }
+    const countEl = document.getElementById('editor-brick-count');
+    if (countEl) countEl.textContent = `BRICKS: ${count}`;
+
+    // Generate .lvl file format string
+    let lvlText = `NAME:Custom_Admin_Level\nTHEME:CYBER_GRID\nMUSIC:SYNTHWAVE\nROWS:${this.editorRows}\nCOLS:${this.editorCols}\nGRID:\n`;
+    for (let r = 0; r < this.editorRows; r++) {
+      lvlText += this.editorGrid[r].join(' ') + '\n';
+    }
+
+    const textarea = document.getElementById('editor-lvl-output');
+    if (textarea) textarea.value = lvlText;
+  }
+
+  _clearEditorGrid() {
+    for (let r = 0; r < this.editorRows; r++) {
+      for (let c = 0; c < this.editorCols; c++) {
+        this.editorGrid[r][c] = '.';
+      }
+    }
+    this._renderEditorGrid();
+    this._updateEditorUI();
+    this.audio.play('break');
+  }
+
+  _randomizeEditorGrid() {
+    const tokens = ['S', 'S', 'T', 'I', 'E', 'P', '.', '.'];
+    for (let r = 0; r < this.editorRows; r++) {
+      for (let c = 0; c < this.editorCols; c++) {
+        this.editorGrid[r][c] = tokens[Math.floor(Math.random() * tokens.length)];
+      }
+    }
+    this._renderEditorGrid();
+    this._updateEditorUI();
+    this.audio.play('morph');
+  }
+
+  _loadPreset(type) {
+    this._clearEditorGrid();
+    if (type === 'pyramid') {
+      for (let r = 0; r < this.editorRows; r++) {
+        const span = Math.min(this.editorCols, (r + 1) * 2);
+        const start = Math.floor((this.editorCols - span) / 2);
+        for (let c = start; c < start + span; c++) {
+          this.editorGrid[r][c] = (r === 0) ? 'E' : (r % 2 === 0 ? 'T' : 'S');
+        }
+      }
+    } else if (type === 'fortress') {
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < this.editorCols; c++) {
+          if (r === 0 || c === 0 || c === this.editorCols - 1) this.editorGrid[r][c] = 'I';
+          else if (r === 1 || r === 2) this.editorGrid[r][c] = 'E';
+          else if (r === 3) this.editorGrid[r][c] = 'P';
+          else this.editorGrid[r][c] = 'T';
+        }
+      }
+    }
+    this._renderEditorGrid();
+    this._updateEditorUI();
+    this.audio.play('morph');
+  }
+
+  _copyLvlConfig() {
+    const textarea = document.getElementById('editor-lvl-output');
+    if (textarea) {
+      navigator.clipboard.writeText(textarea.value).then(() => {
+        this._showToast('COPIED .LVL CONFIG TO CLIPBOARD!');
+      });
+    }
+  }
+
+  _playCustomLevel() {
+    this.customLevelGrid = JSON.parse(JSON.stringify(this.editorGrid));
+    this._startGame();
+    this.ps.addText(this.AW / 2, this.AH / 2, 'PLAYING CUSTOM LEVEL!', '#00ff88', 26);
+  }
 
   _updateStartBest() { this._set('start-best', this._fmt(this.best)); }
 
@@ -1411,6 +1610,7 @@ class BrickBreaker {
       'hero-select':['screen-hero-select'],
       'relic-draft':['screen-relic-draft'],
       'level-select':['screen-level-select'],
+      editor:       ['screen-editor'],
       playing:      ['screen-game'],
       paused:       ['screen-game', 'screen-pause'],
       gameover:     ['screen-game', 'screen-gameover'],

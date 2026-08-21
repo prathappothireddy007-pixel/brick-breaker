@@ -57,6 +57,9 @@
                     <button id="btn-level-select" class="btn-secondary">
                         <span class="btn-label">☰ CAMPAIGN MAP</span>
                     </button>
+                    <button id="btn-admin-editor" class="btn-secondary">
+                        <span class="btn-label">⚙️ LEVEL EDITOR (ADMIN)</span>
+                    </button>
                 </div>
 
                 <div class="current-hero-badge" id="start-hero-badge">
@@ -238,6 +241,64 @@
             </main>
         </section>
         
+        <!-- ══════════════════ LEVEL EDITOR & ADMIN PANEL ══════════════════ -->
+        <section id="screen-editor" class="screen overlay-screen" role="dialog" aria-label="Level Editor Admin">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel editor-panel">
+                <div class="editor-header">
+                    <h2 class="modal-title">⚙️ LEVEL FORMAT ADMIN</h2>
+                    <p class="editor-subtitle">Design custom brick matrices & inspect real-time .lvl configuration tokens</p>
+                </div>
+                <div class="modal-sep"></div>
+
+                <!-- Palette & Tools -->
+                <div class="editor-toolbar">
+                    <div class="palette-group">
+                        <span class="palette-lbl">BRICK PALETTE:</span>
+                        <div class="palette-buttons">
+                            <button class="btn-palette active" data-token="S" title="Standard (1 Hit)"><span class="pal-color pal-s"></span>S: STANDARD</button>
+                            <button class="btn-palette" data-token="T" title="Tough (3 Hits)"><span class="pal-color pal-t"></span>T: TOUGH (3HP)</button>
+                            <button class="btn-palette" data-token="I" title="Iron / Metal (Indestructible)"><span class="pal-color pal-i"></span>I: METAL</button>
+                            <button class="btn-palette" data-token="E" title="Explosive (AoE)"><span class="pal-color pal-e"></span>E: EXPLODE</button>
+                            <button class="btn-palette" data-token="P" title="Power-Up Capsule"><span class="pal-color pal-p"></span>P: POWERUP</button>
+                            <button class="btn-palette" data-token="." title="Erase Cell"><span class="pal-color pal-empty"></span>.: EMPTY</button>
+                        </div>
+                    </div>
+
+                    <div class="editor-quick-actions">
+                        <button id="btn-editor-preset-1" class="btn-ghost btn-sm">PRESET: PYRAMID</button>
+                        <button id="btn-editor-preset-2" class="btn-ghost btn-sm">PRESET: FORTRESS</button>
+                        <button id="btn-editor-random" class="btn-ghost btn-sm">🎲 RANDOM</button>
+                        <button id="btn-editor-clear" class="btn-ghost btn-sm">🗑️ CLEAR</button>
+                    </div>
+                </div>
+
+                <!-- Main Editor Layout: Grid & Inspector -->
+                <div class="editor-body">
+                    <div class="editor-grid-wrapper">
+                        <div class="editor-grid-header">
+                            <span>LEVEL MATRIX CANVAS (CLICK / DRAG TO PAINT)</span>
+                            <span id="editor-brick-count">BRICKS: 0</span>
+                        </div>
+                        <div id="editor-grid" class="editor-grid"></div>
+                    </div>
+
+                    <div class="editor-inspector">
+                        <div class="inspector-header">
+                            <span>LIVE .LVL FILE INSPECTOR</span>
+                            <button id="btn-copy-lvl" class="btn-ghost btn-xs">📋 COPY CONFIG</button>
+                        </div>
+                        <textarea id="editor-lvl-output" class="lvl-textarea" readonly spellcheck="false"></textarea>
+                    </div>
+                </div>
+
+                <div class="editor-actions">
+                    <button id="btn-play-custom-level" class="btn-primary">▶ PLAYTEST CUSTOM LEVEL</button>
+                    <button id="btn-close-editor" class="btn-ghost">CLOSE ADMIN</button>
+                </div>
+            </div>
+        </section>
+
         <!-- ══════════════════ PAUSE OVERLAY ══════════════════ -->
         <section id="screen-pause" class="screen overlay-screen" role="dialog" aria-label="Game Paused">
             <div class="modal-backdrop"></div>
